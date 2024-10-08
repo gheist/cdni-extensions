@@ -3039,7 +3039,7 @@ https://video.example.com/k/movie1/4/013.ts
 
        
 
-            <section title="CI/T Object List Type Capability Object">
+            <section anchor="object-list-type-capability-object" title="CI/T Object List Type Capability Object">
         <t>
            Given an object list being supported by the dCDN, the CI/T Object List Type capability object is used to indicate support for one or more
            Object List types listed in <xref target="IANA.CDNI.ObjectListTypeReg"/> by the type property of the "ObjectList" object. Capability type is  "FCI.TriggerObjectListType".
@@ -3057,7 +3057,7 @@ https://video.example.com/k/movie1/4/013.ts
                     is none supported.</t>
            </list></t>
         </list></t>
-        <section anchor="object-list-type-capability-object" title="CI/T Object List Type Capability Object Serialization">
+        <section title="CI/T Object List Type Capability Object Serialization">
           <t>
              The following shows an example of a JSON serialized CI/T Object List Type Capability object serialization
              for a dCDN that supports "hls" and "dash".
