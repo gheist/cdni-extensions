@@ -822,7 +822,7 @@
 
    <t>
    If cancellation of a "pending" trigger is accepted by the dCDN, the dCDN SHOULD NOT start the processing of that activity.
-   However, a uCDN’s observation of the "pending" state does not guarantee that the trigger will still be "pending" when the 
+   However, a uCDN's observation of the "pending" state does not guarantee that the trigger will still be "pending" when the
    cancellation request is processed by the dCDN; consequently, processing may still occur.
    </t>
 
@@ -938,7 +938,7 @@
 
    <t>
    If deletion of a "pending" trigger is accepted by the dCDN, the dCDN SHOULD NOT start processing that activity. 
-   However, a uCDN’s observation of the "pending" state does not guarantee that the trigger will still be "pending" 
+   However, a uCDN's observation of the "pending" state does not guarantee that the trigger will still be "pending"
    when the deletion request is processed by the dCDN; consequently, processing may still occur.
    </t>
 
@@ -1230,9 +1230,9 @@ uCDN-A                         dCDN-B                         dCDN-C
                 <t>
                 The dCDN B responds with the updated trigger resource representation, describing the progress or 
                 results of trigger processing.  
-                In the flow described above, the trigger state is “failed”, and the “eunsupported” error received 
-                in the trigger status from the dCDN-C is propagated - along with dCDN C’s PID - by adding it to the errors 
-                array in the dCDN-B’s status resource. This status resource is then sent back to the originating uCDN-A.
+                In the flow described above, the trigger state is "failed", and the "eunsupported" error received 
+                in the trigger status from the dCDN-C is propagated - along with dCDN C's PID - by adding it to the errors 
+                array in the dCDN-B's status resource. This status resource is then sent back to the originating uCDN-A.
                 The use of dCDN-C's PID is OPTIONAL; dCDN-B MAY instead use its own PID, thereby obfuscating the 
                 identity of dCDN-C from the upstream CDN.
                 </t>
