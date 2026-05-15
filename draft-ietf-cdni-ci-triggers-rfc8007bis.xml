@@ -292,7 +292,7 @@
 
         <list style="symbols">
                 <t>     
-                        GET — retrieves a representation of the target resource. 
+                        GET - retrieves a representation of the target resource. 
                         GET is a "safe" method: it is not intended to cause state changes on the server.
                 </t>
                 <t>
