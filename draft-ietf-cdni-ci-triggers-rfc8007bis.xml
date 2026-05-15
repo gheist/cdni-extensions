@@ -291,23 +291,22 @@
         </t>
 
         <list style="symbols">
-                <t>
-                        GET - used to retrieve the current state of a resource. 
-                        The GET method doesn't cause any state change on the server side.
+                <t>     
+                        GET — retrieves a representation of the target resource. 
+                        GET is a "safe" method: it is not intended to cause state changes on the server.
                 </t>
                 <t>
-                        POST - used to request that the target resource process the representation enclosed in the request.
-                        If a resource has been created on the server as a result of successfully processing a POST request, 
-                        the server sends a 201 ("Created") response containing a Location header field that contains an identifier
-                        for the newly created resource.
+                        POST - requests that the target resource process the representation enclosed in the request. 
+                        When processing results in the creation of a new resource, the server responds with 201 ("Created") 
+                        and a Location header field containing the URI of the newly created resource.
                 </t>
                 <t>        
-                        DELETE - used to request the server remove the target resource. 
+                        DELETE - requests removal of the target resource.
                 </t>
                 <t>        
-                        HEAD - used to request metadata associated with the target resource, in the form of HTTP response 
-                        headers that would have been sent if the GET method were used instead. The HEAD method can be used to 
-                        verify that the target resource exists on the server.
+                        HEAD - identical to GET, except that the server MUST NOT return a message body. 
+                        HEAD is used to inspect response metadata (e.g., to verify resource existence, or to check Last-Modified, 
+                        ETag, or Content-Length headers) without transferring the representation.
                 </t>
         </list>
    </section>
@@ -370,10 +369,10 @@
         </t>
         <t>
                 If such association between a trigger and pre-existing delivery metadata cannot be established, 
-                the dCDN MUST reject it.
+                the dCDN MUST reject it by responding with 400 ("Bad Request") HTTP status code.
         </t>
         <t>
-        Furthermore, the dCDN SHOULD reject a trigger from the uCDN A that seeks to
+        Furthermore, the dCDN SHOULD similarly reject a trigger from the uCDN A that seeks to
         preposition delivery metadata objects that are in conflict with the
         pre-existing metadata objects belonging to another uCDN B, e.g., if it
         could cause the dCDN to match a content request with metadata objects from
@@ -595,7 +594,7 @@
                 If a trigger is reported as "processed" in the transit CDN or any one of its dCDNs, transit CDNs 
                 MUST report the trigger as "processed" as well. 
                 If a trigger is reported as "failed" by the transit CDN or any one of its dCDNs, the transit
-                CDN must report the trigger as "failed" only after its processing is finished in it and  all of its dCDNs.
+                CDN MUST report the trigger as "failed" only after its processing is finished in it and  all of its dCDNs.
                 A cancelled trigger MUST be reported as "cancelling" until it has been reported as "cancelled",
                 "complete", or "failed" by all cascaded dCDNs.
            </t>
@@ -608,7 +607,7 @@
            </t>
            <t>
                    The "diamond" configuration may cause configuration consistency problems, where
-                   the dCDN MAY end up in possession of multiple, potentially conflicting metadata objects belonging 
+                   the dCDN may end up in possession of multiple, potentially conflicting metadata objects belonging 
                    to the multiple uCDNs that match the same content request.
                    The conflict may arise due to the differences in trigger processing by the transit CDNs 
                    and/or variances in trigger propagation delay across different paths in the "diamond" topology.
@@ -633,24 +632,24 @@
    <xref target="cdn-pid">CDN Provider ID (PID)</xref> to detect and prevent loops as follows:
    <list style="symbols">
    <t>
-   The uCDNs that originate a new trigger request SHOULD specify their CDN provider ID using the
+   The uCDNs that originate a new trigger request SHOULD specify their CDN PID using the
    trigger "cdn-path" attribute (see <xref target="ci-trigger-resource"/> for details).
    </t>
    <t>
    A dCDN that receives a trigger creation request that contains a "cdn-path" attribute SHOULD check it for its own CDN PID.
    If the dCDN's PID is already present, and the dCDN is not the CDN initiating the trigger, this condition likely indicates a loop.
-   In such case, the dCDN MUST reject the trigger, which would result in a trigger rejection being returned to the 
+   In such case, the dCDN MUST reject the trigger with status code 400 ("Bad Request"), which would result in a trigger rejection being returned to the 
    originating uCDN. If the dCDN receives a trigger that it itself originated, the dCDN MAY process the trigger as required.
    </t>
    <t>
-   A dCDN that cascades trigger requests to additional dCDNs (so-called "transit CDN") SHOULD NOT reject
-   triggers that have CDN PID of its downstream CDNs in their CDN path, allowing each CDN to do their own loop detection.
+   A dCDN that acts as a transit CDN by cascading trigger requests to additional SHOULD NOT reject
+   triggers that contain CDN PIDs matching any of its downstream CDNs in their CDN path, allowing each CDN to do its own loop detection.
    </t>
    <t>
    Transit CDNs MUST append their CDN PID to the CDN path of a trigger before sending it to its downstream CDNs.
    </t>
    <t>
-   The dCDNs SHOULD advertise their CDN provider ID to the uCDNs using the "cdn-id" attribute of the 
+   The dCDNs SHOULD advertise their CDN PID to the uCDNs using the "cdn-id" attribute of the 
    <xref target="ci-trigger-index-resource">trigger index</xref> resource.
    </t>
 
@@ -706,7 +705,7 @@
 
    This means that the URIs for all trigger resources and trigger collection representations can be discovered by the uCDN through
    the top-level trigger index resource, allowing dCDNs to use any URI structure they choose for CI/T resources.
-   Therefore, the uCDNs MUST NOT make any assumptions regarding the structure of CI/T URIs or the mapping between CI/T
+   Therefore, uCDNs MUST NOT make any assumptions regarding the structure of CI/T URIs or the mapping between CI/T
    objects and their associated URIs. The URIs used in the examples in this document are purely illustrative and are not 
    intended to impose a definitive structure on CI/T interface implementations.
    </t>
@@ -750,6 +749,10 @@
    further status updates, setting  the trigger state to "processed" at creation time. 
    In this case, dCDN SHOULD continue processing as if it were a request in the "complete" state.
    </t>
+   <t>
+   Unlike <xref target="RFC8007"></xref>, this revision does not recommend providing an "etime" estimate in this case, 
+   as a dCDN unable to report progress is unlikely to be able to estimate completion.
+   </t>
 
    <t>
    The uCDN MAY request the new trigger to be created in the "active" state so that its processing begins immediately.
@@ -775,7 +778,8 @@
    </t>
    <t>
    The uCDN can request modification of an existing trigger resource by sending an updated trigger representation 
-   to the trigger URI using HTTP POST command.  
+   to the trigger URI using HTTP POST command. 
+   The POST method is used here to mutate an existing resource; no new resource is created.
    </t>
    <t>
    The dCDN MAY accept modifications of the trigger specifications, trigger extensions and trigger labels, 
@@ -989,7 +993,7 @@
 
    <section title="Error Handling" anchor="error-handling">
    <t>
-   The dCDN MAY reject CI/T interface requests by responding with 4xx or 5xx HTTP status codes.
+   The dCDN SHOULD reject CI/T interface requests by responding with 4xx or 5xx HTTP status codes.
    For example, the uCDN MAY respond with 400 ("Bad Request") if the request is malformed, 
    or 403 ("Forbidden") or 404 ("Not Found") if the request could not be properly authenticated 
    or if the uCDN is trying to act on another CDN's resources.
@@ -1445,7 +1449,8 @@ uCDN-A                         dCDN-B                         dCDN-C
 
    <t>
    The attributes "total-objects-count", "total-nodes-count", and "total-objects-size" are cumulative progress indicators. 
-   When supported, the dCDN SHOULD report them as aggregate values across all of its nodes and any cascaded dCDNs. 
+   It is RECOMMENDED that the dCDN maintains these attributes as cumulative counters across all of its nodes, as well as any cascaded dCDNs,
+   without de-duplicating the same objects processed in multiple nodes.
    The dCDN MAY update these values as trigger processing progresses while the trigger is in the "active" state. 
    The primary purpose of these attributes is to help the uCDN detect abnormal trigger processing
    results, e.g., a purge or preposition trigger that impacted a lower or higher number of objects than expected.
@@ -1552,8 +1557,6 @@ uCDN-A                         dCDN-B                         dCDN-C
         When processing a trigger, CDNs MUST ignore the URL scheme (HTTP or HTTPS) in comparing URLs.
         For example, for a CI/T "invalidate" or "purge" action, content MUST be invalidated or
         purged regardless of the protocol clients used to request it.
-   </t>
-   <t>
    </t>
 
 
@@ -2533,13 +2536,14 @@ uCDN-A                         dCDN-B                         dCDN-C
    in the "prerequisites" extension attribute, the dCDN MUST set the trigger state to "failed", set the error to "eextension",  
    and MAY include an optional error description.  
    A trigger modification request that would result in the "prerequisites" attribute containing invalid trigger URLs  
-   MUST be rejected by the dCDN with status code 409 (Conflict).  
+   MUST be rejected by the dCDN with status code 409 ("Conflict").  
    URL values that reference existing finished triggers are allowed but ignored.
    </t>
 
    <t>
    A dCDN SHOULD reject a trigger whose ExecutionPolicy contains a "prerequisites" dependency referencing a trigger in the "processed" 
-   state, since completion of such a trigger cannot be confirmed.
+   state, since completion of such a trigger cannot be confirmed.  
+   The rejection MUST be indicated by returning HTTP status code 400 ("Bad Request").
    </t>
 
 
@@ -2575,7 +2579,7 @@ uCDN-A                         dCDN-B                         dCDN-C
    <list style="numbers">
 
    <t>
-   When the dCDN receives a request to create a trigger, it MUST reject the request
+   When the dCDN receives a request to create a trigger, it MUST reject the request with status code 400 ("Bad Request")
    if the trigger depends on other pending triggers with lower priority in order to prevent deadlocks.
    </t>
 
@@ -2653,21 +2657,21 @@ their lower priority relative to the active trigger.
 
 <t>
 When the dCDN receives a request to modify the priority and/or dependencies and/or TimeWindow of 
-a pending trigger, it MUST reject the request with status 409 (Conflict) if the change would result in 
+a pending trigger, it MUST reject the request with status 409 ("Conflict") if the change would result in 
 that trigger depending on other triggers with lower priority, or its TimeWindow ending before the start of 
 the TimeWindow of any trigger it depends on,  or before the start of the TimeWindow of any trigger with 
 higher priority.
 </t>
 
 <t>
-Otherwise, the dCDN MUST reject the request with status code 409 (Conflict) if the change would 
+Otherwise, the dCDN MUST reject the request with status code 409 ("Conflict") if the change would 
 result in the trigger depending on other triggers that, directly or indirectly, depend on the 
 modified trigger.
 </t>
 
 <t>
 When the dCDN receives a request to modify the TimeWindow extension, it MUST reject the request with 
-status code 409 (Conflict) if the modification would set the "end" time to a value in the past.
+status code 409 ("Conflict") if the modification would set the "end" time to a value in the past.
 </t>
 
 <t>
@@ -2679,13 +2683,13 @@ state to "failed" and the error to "ereject", optionally providing the error des
 
 <t>
 When the dCDN receives a request to change the state of a pending trigger to "active",  
-it MUST reject the request with status code 409 (Conflict) if, as a result of the change,  
+it MUST reject the request with status code 409 ("Conflict") if, as a result of the change,  
 the trigger would depend on incomplete triggers, have lower priority than other pending triggers,  
 have a TimeWindow start time in the future, or set a new TimeWindow end time in the past.
 </t>
 
 <t>
-Otherwise, the dCDN MAY still reject the request with status code 409 (Conflict) if the processing of the trigger
+Otherwise, the dCDN MAY still reject the request with status code 409 ("Conflict") if the processing of the trigger
 could not be started immediately due to the dCDN business logic. 
 </t>
 
@@ -2723,7 +2727,7 @@ Otherwise, the dCDN MUST set the trigger state to "active" and start its process
    <c>pending</c>
    <c>The trigger processing has not begun yet.</c>
    <c>active</c>
-   <c>The trigger is currently being acted upon.</c>
+   <c>The trigger is currently being executed.</c>
    <c>complete</c>
    <c>The trigger processing completed successfully.</c>
    <c>processed</c>
@@ -2939,7 +2943,7 @@ Otherwise, the dCDN MUST set the trigger state to "active" and start its process
    <c>esubject</c>
    <c>An error occurred while parsing a trigger subject, or that the specific trigger subject is not supported by the CDN.</c>
    <c>eextension</c>
-   <c>An error occurred while parsin or applying a trigger extension, or that the specific extension is not supported by the CDN.</c>
+   <c>An error occurred while parsing or applying a trigger extension, or that the specific extension is not supported by the CDN.</c>
    </texttable>
    </section>
    </section>
@@ -3086,7 +3090,7 @@ Otherwise, the dCDN MUST set the trigger state to "active" and start its process
    <vspace blankLines="1"/>
    Description: Specifies the filter value used to select the triggers in the collection.  
    <vspace blankLines="1"/>
-   Value: For per-label trigger collections, this attribute MUST contain the corresponding label value.  
+   Value: For per-label trigger collections, this attribute MUST contain the corresponding label expressed as a key-value pair (label name and value).
    For per-state trigger collections, it MUST contain the trigger state shared by all triggers in the collection.  
    <vspace blankLines="1"/>
    Mandatory-to-Specify: No. The "filter-value" attribute MUST be used only in per-state and per-label trigger collections.  
@@ -3350,7 +3354,7 @@ Otherwise, the dCDN MUST set the trigger state to "active" and start its process
    </texttable>   
    </section>
 
-   <section title="JSON-encodedd Content Object type" anchor="content-object-type-json">
+   <section title="JSON-encoded Content Object type" anchor="content-object-type-json">
  
    <t>
    When encoded using JSON, the representation consists of an array of ContentObject JSON objects. 
@@ -3405,7 +3409,7 @@ Otherwise, the dCDN MUST set the trigger state to "active" and start its process
      <c>Provides additional information using "objects" attribute in <xref target="error-v2-description">Error.v2 description</xref> object.</c>
    
      <c>trigger-collection</c>
-     <c>Provides an extended representation of triggers using "trigger-objects" attribute in the <xref target="ci-trigger-collection-resource">Ttrigger Collection</xref> object.</c>
+     <c>Provides an extended representation of triggers using "trigger-objects" attribute in the <xref target="ci-trigger-collection-resource">Trigger Collection</xref> object.</c>
    </texttable>
    
    <t>
@@ -3734,7 +3738,7 @@ Otherwise, the dCDN MUST set the trigger state to "active" and start its process
         <t><list style="empty" hangIndent="3">
    <t><list style="hanging" hangIndent="3">
 
-      <t hangText="Name: url-type-support">
+      <t hangText="Name: cit-url-types">
       <vspace blankLines="1"/>
       Description: Array of supported URL types.
       <vspace blankLines="1"/>
@@ -3756,7 +3760,9 @@ Otherwise, the dCDN MUST set the trigger state to "active" and start its process
 {
   "capabilities": [{
     "capability-type": "FCI.CITUrlType",
-    "capability-value": [ "published", "private" ],
+    "capability-value": {
+      "cit-url-types": [ "published", "private" ]
+    },
     "footprints": {
       "footprint-type": "countrycode",
       "footprint-value": [ "us" ]
@@ -5180,7 +5186,7 @@ Server: example-server/0.1
                <t>Purpose: The purpose of this payload type is to distinguish FCI advertisement objects for
                   CI/T URL Type objects</t>
                <t>Interface: FCI</t>
-               <t>Value: "FCI.CITrlType"</t> 
+               <t>Value: "FCI.CITUrlType"</t> 
                <t>Encoding: see <xref target="url-type-capability-object"/></t>
             </section>
 
