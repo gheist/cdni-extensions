@@ -642,7 +642,7 @@
    originating uCDN. If the dCDN receives a trigger that it itself originated, the dCDN MAY process the trigger as required.
    </t>
    <t>
-   A dCDN that acts as a transit CDN by cascading trigger requests to additional SHOULD NOT reject
+   A dCDN that acts as a transit CDN by cascading trigger requests to additional dCDNs SHOULD NOT reject
    triggers that contain CDN PIDs matching any of its downstream CDNs in their CDN path, allowing each CDN to do its own loop detection.
    </t>
    <t>
@@ -746,12 +746,9 @@
    <t>
    The dCDN SHOULD respond with updated trigger resource representations to the subsequent uCDN requests sent to the created trigger URI.
    If the dCDN is unable to do that, it MUST indicate that it has accepted the request but will not be providing 
-   further status updates, setting  the trigger state to "processed" at creation time. 
-   In this case, dCDN SHOULD continue processing as if it were a request in the "complete" state.
-   </t>
-   <t>
-   Unlike <xref target="RFC8007"></xref>, this revision does not recommend providing an "etime" estimate in this case, 
-   as a dCDN unable to report progress is unlikely to be able to estimate completion.
+   further status updates, setting the trigger state to "processed" at creation time. 
+   In this case, the dCDN SHOULD continue processing as if it were a request in the "complete" state.
+   It is RECOMMENDED that the dCDN provide an estimate of trigger completion ("etime") when the trigger state is set to "processed".
    </t>
 
    <t>
@@ -3234,7 +3231,7 @@ Otherwise, the dCDN MUST set the trigger state to "active" and start its process
    </t>
    <t>Unless otherwise specified, the ordering of ContentObject elements does not imply processing order.</t>
    <t>
-   It is RECOMMENDED that ContentObject lists be flattened, when used by dCDN to return trigger status, avoiding the
+   It is RECOMMENDED that ContentObject lists be flattened, when used by the dCDN to return trigger status, avoiding the
    use of recursion, in order to simplify processing.
    </t>
    
@@ -3361,8 +3358,7 @@ Otherwise, the dCDN MUST set the trigger state to "active" and start its process
    Depending on the specified ContentObject type, an object MAY expand into additional content objects, 
    enabling recursive object lists that MAY combine ContentObjects of different types.
    </t> 
-   <t>
-   The content objects encoded using JSON should follow the JSON grammar specification <xref target="ECMA404"/>,
+   <t> The content objects encoded using JSON should follow the JSON grammar specification <xref target="ECMA404"/>,
    including explicit newline encoding and absolute URLs MUST be used at all times.
    </t>
    </section>
@@ -3406,16 +3402,16 @@ Otherwise, the dCDN MUST set the trigger state to "active" and start its process
      <c>Provides additional information using "objects" attribute in the <xref target="ci-trigger-resource">Trigger</xref> object.</c>
    
      <c>error-v2-description</c>
-     <c>Provides additional information using "objects" attribute in <xref target="error-v2-description">Error.v2 description</xref> object.</c>
+     <c>Provides additional information using the "objects" attribute in the <xref target="error-v2-description">Error.v2 description</xref> object.</c>
    
      <c>trigger-collection</c>
-     <c>Provides an extended representation of triggers using "trigger-objects" attribute in the <xref target="ci-trigger-collection-resource">Trigger Collection</xref> object.</c>
+     <c>Provides an extended representation of triggers using the "trigger-objects" attribute in the <xref target="ci-trigger-collection-resource">Trigger Collection</xref> object.</c>
    </texttable>
    
    <t>
-   A dCDN MAY support one or more Extended Status Types. A uCDN MAY request
-   an Extended Status representation only if the corresponding capability
-   has been advertised by the dCDN.
+   A dCDN MAY support one or more Extended Status Types. A uCDN MAY request an Extended Status representation. 
+   If the uCDN requests an Extended Status Type that the dCDN has not advertised as a capability, the dCDN MUST
+   reject the request with an appropriate error response.
    </t>
    
    </section>
@@ -3689,7 +3685,7 @@ Otherwise, the dCDN MUST set the trigger state to "active" and start its process
 
    <section anchor="content-object-type-capability-object" title="CI/T Content Object Type Capability Object">
         <t>
-      Given dCDN supports "content-objectlist" trigger spec, the CI/T Content Object Type capability object is used to 
+      Given a dCDN supports "content-objectlist" trigger spec, the CI/T Content Object Type capability object is used to 
       indicate support for one or more Content Object types listed in <xref target="IANA.CDNI.ContentObjectTypeReg"/> 
       by the type property of the "ContentObject" object. The capability type is "FCI.CITContentObjectType".
         </t>
@@ -5418,11 +5414,6 @@ Server: example-server/0.1
    prevent unauthorized users from generating unnecessary load in the dCDNs
    or the uCDNs due to revalidation, reacquisition, or unnecessary
    acquisition.</t>
-
-   <t>
-   When deploying a network of interconnected CDNs, the possible
-   inefficiencies related to the diamond configuration discussed in
-   <xref target="multiple-interconnected-cdns"/> should be considered.</t>
 
    </section>
 
