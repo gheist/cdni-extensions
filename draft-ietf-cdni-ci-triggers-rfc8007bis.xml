@@ -723,9 +723,7 @@
 
    <t>
    The dCDN MUST validate the trigger resource representation sent by the uCDN. If the representation is malformed or the uCDN 
-   does not have sufficient access rights, the dCDN MUST either respond with an appropriate 4xx HTTP error code 
-   and not create a trigger resource or create a trigger resource with a "failed" state and an appropriate 
-   <xref target="error-v2-description">Error.v2 Description</xref>.
+   does not have sufficient access rights, the dCDN MUST either respond with an appropriate 4xx HTTP error code.
    </t>
 
    <t>
@@ -990,36 +988,41 @@
 
    <section title="Error Handling" anchor="error-handling">
    <t>
-   The dCDN SHOULD reject CI/T interface requests by responding with 4xx or 5xx HTTP status codes.
-   For example, the uCDN MAY respond with 400 ("Bad Request") if the request is malformed, 
+   The dCDN SHOULD reject invalid CI/T interface requests with a 4xx or 5xx HTTP status code.
+   For example, the dCDN MAY respond with 400 ("Bad Request") if the request is malformed, 
    or 403 ("Forbidden") or 404 ("Not Found") if the request could not be properly authenticated 
    or if the uCDN is trying to act on another CDN's resources.
-   A summary of the HTTP status codes used by this interface is provided below in <xref target="http-error-codes" format="title"/>.
+   The HTTP status codes used by this interface are summarized in <xref target="http-error-codes" format="title"/>.
+   </t>
+   <t>
+   The response body for a rejected request SHOULD contain an Error.v2 Description object identifying the reason for the rejection.
+   Providing the full Error.v2 Description allows a transit CDN that receives the rejection when propagating a trigger to relay 
+   the error upstream without loss of information (see <xref target="error-propagation"/>. 
+   A rejected request does not create a trigger resource.
+   </t>
+   <t>
+   Once a request has been accepted, processing errors are reported within the trigger as a list of 
+   <xref target="error-v2-description">Error.v2 Descriptions</xref>. 
+   Each Error.v2 Description reports errors against one or more of the URLs or patterns in the trigger specification.
    </t>
 
    <t>
    If any part of the trigger processing fails, the trigger SHOULD be reported as "failed" once its activity 
-   is complete or if no further errors will be reported. The "errors" property in the trigger will be used to 
-   enumerate which actions failed and the reasons for failure, and can be present while the trigger is still "pending" 
-   or "active" if the trigger processing is still running for some URLs or patterns in the trigger specs.
-   </t>
-
-   <t>
-   Once a request has been accepted, processing errors are reported in the trigger using a list of <xref target="error-v2-description">Error.v2 Descriptions</xref>. 
-   Each Error.v2 Description is used to report errors against one or more of the URLs or patterns in the trigger 
-   specification.
+   completes, or once no further errors will be reported. The "errors" property in the trigger enumerates which actions failed and why.
+   It MAY be present while the trigger is still "pending" or "active" if processing is still running for some of the URLs or patterns 
+   in the trigger specification.
    </t>
 
    <t>
      If the dCDN experiences an internal outage or is unable to propagate a
-     trigger to one or more cascaded dCDNs, the dCDN SHOULD report an error
+     trigger to one or more cascaded dCDNs, it SHOULD report an error
      for the affected trigger.
    </t>
    
    <t>
      The temporary unavailability of individual nodes within the dCDN is an
-     internal operational condition that the dCDN SHOULD handle internally
-     and SHOULD NOT, by itself, affect the reported state of the trigger.
+     internal operational condition. The dCDN SHOULD handle this internally
+     and such unavailability SHOULD NOT, by itself, affect the reported state of the trigger.
      The dCDN SHOULD ensure that nodes returning to service are brought into
      a state consistent with previously executed trigger operations before
      those nodes resume normal operation.
@@ -1108,27 +1111,40 @@
         
         </section>
           <section anchor="error-propagation" title="Error Propagation">
+
         <t>
-             CDNI triggers may be propagated over a chain of downstream CDNs. For example, an 
-             upstream CDN A ("uCDN-A") that is delegating to a downstream CDN B ("dCDN-B") and dCDN-B is delegating 
-             to a downstream CDN C ("dCDN-C"). Triggers sent from uCDN-A to dCDN-B may be redistributed 
-             from dCDN-B to dCDN-C, and errors can occur anywhere along the path. Therefore, it might be desirable for 
-             uCDN-A which sets the trigger to be able to trace back an error to the downstream CDN where it occurred. 
-             This document adds a mechanism to propagate the PID of the dCDN where the fault occurred, back to the 
-             uCDN by adding the PID
-             to the error.v2 description. When dCDN-B propagates a trigger to dCDN-C, 
-             it MUST also propagate back the errors received in the trigger status resource from dCDN-C by adding
-             them to the errors array in its status resource to be sent back to the originating uCDN-A.
-             While propagating back the errors, dCDN-B MAY also specify the dCDN-C PID, indicating from which CDN the error originated.
-             The trigger-originating upstream uCDN-A then receives an array containing the errors that occurred across
-             all the downstream CDNs along the execution path, where each error MAY include its own CDN identifier.
-          </t>
-          <t>
+        CDNI triggers may be propagated over a chain of downstream CDNs. 
+        For example, an upstream CDN A ("uCDN-A") delegates to a downstream CDN B ("dCDN-B"), 
+        and dCDN-B in turn delegates to a downstream CDN C ("dCDN-C"). 
+        Triggers sent from uCDN-A to dCDN-B may be redistributed from dCDN-B to dCDN-C, and errors can occur anywhere along the path. 
+        It is therefore desirable for uCDN-A, which originated the trigger, to be able to trace an error back to the 
+        downstream CDN where it occurred. This document adds a mechanism to convey the PID of the dCDN at which a fault occurred back 
+        to the uCDN, by including that PID in the Error.v2 Description.
+        </t>
+        <t>
+        Errors arising within a cascaded CDN may be either synchronous request rejections or asynchronous processing failures. 
+        A downstream CDN that accepts a trigger creation request with a 2xx status code reports any subsequent processing failures 
+        asynchronously, through Error.v2 Descriptions in the trigger status resource. 
+        However, when such a CDN propagates the trigger further downstream, the next CDN in the chain may reject the propagated 
+        request with a 4xx or 5xx HTTP status code. Because the upstream request has already been accepted, this rejection cannot be 
+        reported upstream as an HTTP status code. Instead, the CDN that received the rejection MUST translate it into an Error.v2 
+        Description and report it in its trigger status resource.
+        </t>
+        <t>
+        Accordingly, when dCDN-B propagates a trigger to dCDN-C, it MUST propagate back the errors associated with that trigger - 
+        whether dCDN-C rejected the propagated request synchronously or reported processing failures asynchronously - by adding the 
+        corresponding Error.v2 Descriptions to the "errors" array in the trigger status resource it returns to uCDN-A. 
+        When doing so, dCDN-B MAY include dCDN-C's PID in each propagated Error.v2 Description, indicating the CDN at which the 
+        error originated. uCDN-A then receives an "errors" array containing the errors that occurred across all downstream CDNs along 
+        the execution path, where each error MAY identify the CDN at which it occurred.
+        </t>
+
+        <t>
             <xref target="error-propagation-seq"/> below is an example showing the message flow used by
             uCDN-A to trigger activity in dCDN-B, followed by dCDN-C, as well as the discovery of the
             status of that activity, including the Error Propagation.
-          </t>
-          <figure anchor="error-propagation-seq" title="CDNI Message Flow for Triggers, Including Error Propagation">
+        </t>
+        <figure anchor="error-propagation-seq" title="CDNI Message Flow for Triggers, Including Error Propagation">
             <artwork><![CDATA[
 uCDN-A                         dCDN-B                         dCDN-C
  |                              |                              |    
@@ -1147,39 +1163,21 @@ uCDN-A                         dCDN-B                         dCDN-C
  |                             [ ]--------------------------->[ ]--+
  |                              |                             [ ]  |
  |                              |                             [ ]<-+
- |                              | (6) HTTP 201 Response.      [ ]   
+ |                              | (6) HTTP 400 Response.      [ ]   
  |                             [ ]<---------------------------[ ]   
- |                              |  Loc:                        |    
- |                              |  https://dcdn-c.com          |    
- |                              |  /cit/dcdn-b/456             |    
  |                              |                              |    
  |                             [ ]--+                          |
- |                             [ ]  | (7.1)                    |
- |                             [ ]<-+                         [ ]--+
- |                              |                       (7.2) [ ]  |
- |                              |                             [ ]<-+
- |                              |                              |    
+ |                             [ ]  | (7)                      |
+ |                             [ ]<-+                          |
  .                              .                              .   
  .                              .                              .   
  .                              .                              .   
- |                              | (8) GET                      |    
- |                              | https://dcdn-c.com           |    
- |                              | /cit/dcdn-b/456              |    
- |                             [ ]--------------------------->[ ]   
- |                              |                             [ ]   
- |                              | (9) HTTP 200                [ ]   
- |                              | Trigger resource            [ ]   
- |                             [ ]<---------------------------[ ]   
- |                              |                              |    
- .                              .                              .   
- .                              .                              .   
- .                              .                              .   
- | (10) GET                     |                              |    
+ | (8) GET                      |                              |    
  | https://dcdn-b.com           |                              |    
  | /cit/ucdn-a/123              |                              |    
 [ ]--------------------------->[ ]                             |    
  |                             [ ]                             |    
- | (11) HTTP 200               [ ]                             |    
+ | (9) HTTP 200                [ ]                             |    
  | Trigger resource            [ ]                             |    
 [ ]<---------------------------[ ]                             |    
          ]]></artwork>
@@ -1205,37 +1203,28 @@ uCDN-A                         dCDN-B                         dCDN-C
                 "https://dcdn-c.com/cit/dcdn-b". 
                 </t>
                 <t>
-                dCDN-C authenticates the request, validates the trigger creation request, 
-                and, if it accepts the request, creates a new trigger resource.
+                dCDN-C authenticates the request and validates the trigger creation request.
+                dCDN-C does not support an element of the request - for example, the trigger definition 
+                contains an "action" type that dCDN-C does not support.
                 </t>
                 <t>
-                dCDN-C responds to dCDN-B with an HTTP 201 ("Created") response status and
-                the location of the newly created trigger resource.
+                dCDN-C rejects the request with a 4xx HTTP status code (for example, 400 "Bad Request").
+                The response body contains an Error.v2 Description with the error code "eunsupported" and the 
+                offending portion of the trigger specification. No trigger resource is created at dCDN-C.
                 </t>
                 <t>
-                dCDN-C acts upon the trigger. However, the command fails at dCDN-C as,
-                for example, the trigger definition contains an "action" type that is not supported by dCDN-C.
-                dCDN-C's action is depicted by 7.2 in the diagram, while 7.1 shows dCDN-B acting on its own trigger.
+                dCDN-B receives the rejection from dCDN-C and translates it into an Error.v2 Description, 
+                setting the state of its own trigger resource to "failed".
                 </t>
                 <t>
-                dCDN-B queries, possibly repeatedly, the trigger resource in dCDN-C.
+                uCDN-A queries, possibly repeatedly, the trigger resource in dCDN-B.
                 </t>
                 <t>
-                dCDN-C responds with the trigger resource representation, describing the progress or results
-                of the trigger processing. In the described flow, the trigger state is "failed",
-                with an Error.v2 Description object holding "eunsupported" Error Code reflecting the reason.
-                </t>
-                <t>
-                uCDN-A queries, possibly repeatedly, the trigger status in dCDN-B.
-                </t>
-                <t>
-                The dCDN B responds with the updated trigger resource representation, describing the progress or 
-                results of trigger processing.  
-                In the flow described above, the trigger state is "failed", and the "eunsupported" error received 
-                in the trigger status from the dCDN-C is propagated - along with dCDN C's PID - by adding it to the errors 
-                array in the dCDN-B's status resource. This status resource is then sent back to the originating uCDN-A.
-                The use of dCDN-C's PID is OPTIONAL; dCDN-B MAY instead use its own PID, thereby obfuscating the 
-                identity of dCDN-C from the upstream CDN.
+                dCDN-B responds with the updated trigger resource representation. The trigger state is "failed", 
+                and the Error.v2 Description carries the error code "eunsupported" received from dCDN-C, 
+                with dCDN-C's PID identifying where the error originated. 
+                Including dCDN-C's PID is OPTIONAL; dCDN-B MAY instead use its own PID, thereby 
+                obfuscating the identity of dCDN-C from the upstream CDN.
                 </t>
         </list> </t>
       </section>
@@ -1311,7 +1300,8 @@ uCDN-A                         dCDN-B                         dCDN-C
    <vspace blankLines="1"/>
    Description: Array of trigger labels, as described in <xref target="trigger-labels"/>.
    <vspace blankLines="1"/>
-   Value: Array of trigger labels. Each label is a key-value pair, encoded as a JSON string, with "=" separator. 
+   Value: A JSON object of trigger labels, where each member represents one label: the member name is the label key 
+   and the member value is the label value, both being JSON strings.
    The label key and value MUST each be no more than 63 characters in length, MUST begin with a letter or a number,
    and MAY contain letters, numbers, hyphens, dots, and underscores.
    <vspace blankLines="1"/>
@@ -1466,10 +1456,10 @@ uCDN-A                         dCDN-B                         dCDN-C
    </t>
 
    <t>
-   The dCDN receiving a request containing a trigger action that it does not
-   recognize or does not support MUST reject the request by creating a
-   trigger with a "failed" state and the "errors" array containing an Error.v2 Description 
-   with error "eunsupported" (see <xref target="error-code"/>).</t>
+   A dCDN that receives a request containing a trigger action it does not recognize or support MUST reject the request with a 4xx 
+   HTTP status code (for example, 400 "Bad Request"), as described in <xref target="http-error-codes"/>.
+   Such a request does not create a trigger and therefore produces no Error.v2 Description.
+   </t>
 
    <t>
    The following trigger actions are defined by this document:
@@ -1519,9 +1509,11 @@ uCDN-A                         dCDN-B                         dCDN-C
    </t>
 
    <t>
-   A dCDN receiving a trigger creation request that contains a trigger spec it does not recognize or 
-   support MUST reject the request by creating a trigger resource with a "failed" state and 
-   the "errors" array containing an Error.v2 Description with the error "espec" (see <xref target="error-code"/>).
+   A dCDN that receives a trigger creation request containing a trigger specification it does not recognize or support 
+   MUST reject the request with a 400 ("Bad Request") HTTP status code.  The response body SHOULD contain an Error.v2 Description 
+   with the error code "espec", including the portion of the trigger specification that caused the rejection. 
+   as defined in <xref target="error-code"/> and a human-readable description identifying the unsupported or unrecognized element. 
+   Such a request does not create a trigger resource.
    </t>
 
    <t>
@@ -1637,9 +1629,10 @@ uCDN-A                         dCDN-B                         dCDN-C
    </t>
 
    <t>
-   The dCDN receiving a trigger creation request containing a trigger subject that it does not
-   recognize or does not support MUST reject the request by creating a trigger resource with a "failed" state 
-   and the "errors" array containing an Error.v2 Description with error "esubject" (see <xref target="error-code"/>).
+   A dCDN that receives a trigger creation request containing a trigger subject it does not recognize or support MUST reject 
+   the request with a 400 ("Bad Request") HTTP status code.  The response body SHOULD contain an Error.v2 Description with 
+   the error code "esubject", identifying the unrecognized or unsupported subject.
+   Such a request does not create a trigger resource.
    </t>
 
    <t>
@@ -2613,8 +2606,8 @@ Otherwise, the dCDN SHOULD create the trigger in "active" state and begin its pr
 </t>
 
 <t>
-In all of the above cases, the dCDN rejects the request by creating a trigger in a "failed" state,
-setting the error to "ereject" and optionally providing an error description.
+In all of the above cases, the dCDN MUST reject the request by returning a 4xx or 5xx HTTP status code.  The response body 
+for a rejected request SHOULD contain an Error.v2 Description object identifying the reason for the rejection.
 </t>
 </list>
 </t>
@@ -2633,13 +2626,13 @@ no other pending triggers with higher priority, and there are no incomplete prer
 The dCDN SHOULD periodically re-evaluate the pending trigger queue for triggers that have a TimePolicy set,
 to ensure that processing of such triggers completes before the corresponding TimePolicy window expires.
 If during such evaluation a pending trigger is deemed to have expired, the dCDN MUST set the trigger
-state to "failed" and the error to "ereject", optionally providing the error description.
+state to "failed".
 </t>
 
 <t>
 Whenever a trigger reaches a terminal state, the dCDN SHOULD re-evaluate the queue of pending triggers.
 If during such evaluation a pending trigger is deemed to have expired, the dCDN MUST set the trigger
-state to "failed" and the error to "ereject", optionally providing the error description.
+state to "failed" and the error to "ereject".
 Otherwise, the dCDN MAY start processing triggers that were previously dependent on the completed trigger.
 </t>
 
@@ -2647,9 +2640,8 @@ Otherwise, the dCDN MAY start processing triggers that were previously dependent
 Whenever a pending trigger becomes eligible for processing, the dCDN SHOULD re-evaluate the pending 
 trigger queue.
 If during such evaluation a pending trigger is deemed to have expired, the dCDN MUST set the trigger
-state to "failed" and the error to "ereject", optionally providing the error description.
-Otherwise, the dCDN MAY start processing additional triggers that could not be processed earlier due to 
-their lower priority relative to the active trigger.
+state to "failed" and the error to "ereject".  Otherwise, the dCDN MAY start processing additional 
+triggers that could not be processed earlier due to their lower priority relative to the active trigger.
 </t>
 
 <t>
@@ -2671,18 +2663,28 @@ When the dCDN receives a request to modify the TimeWindow extension, it MUST rej
 status code 409 ("Conflict") if the modification would set the "end" time to a value in the past.
 </t>
 
+
 <t>
 Otherwise, the dCDN SHOULD accept the request and evaluate whether the modified trigger becomes
 eligible for processing as a result of the change.
 If at this time, the modified trigger has a TimePolicy "end" time set in the past, the dCDN MUST set the trigger
-state to "failed" and the error to "ereject", optionally providing the error description. 
+state to "failed" and the error to "ereject".
 </t>
+
 
 <t>
 When the dCDN receives a request to change the state of a pending trigger to "active",  
 it MUST reject the request with status code 409 ("Conflict") if, as a result of the change,  
 the trigger would depend on incomplete triggers, have lower priority than other pending triggers,  
 have a TimeWindow start time in the future, or set a new TimeWindow end time in the past.
+</t>
+<t>
+Whenever a 409 ("Conflict") status code is returned, the dCDN SHOULD include an Error.v2 Description 
+in the response body, with the error code set to "eextension" and a human-readable error description.
+</t>
+<t>
+In all of the above cases involving asynchronous error reporting within accepted triggers, the dCDN SHOULD 
+also provide a human-readable error description in the Error.v2 Description returned in the trigger resource.
 </t>
 
 <t>
@@ -2747,9 +2749,21 @@ Otherwise, the dCDN MUST set the trigger state to "active" and start its process
 
    </section>
    <section title="Trigger Errors" anchor="trigger-errors">
-   <section title="Error.v2 Description" anchor="error-v2-description"><t>
-   An Error.v2 Description is used to report the failure of a trigger. 
-   It is encoded as a JSON object with the following attributes:</t>
+   <section title="Error.v2 Description" anchor="error-v2-description">
+   <t>
+   Error.v2 Description reports an error associated with a trigger. The same representation is used in two contexts: 
+   within an accepted trigger, to report failures that occur during trigger processing; and within the body of a 4xx 
+   or 5xx response, to report the reason a trigger creation request was rejected.
+
+   A request rejected with a 4xx or 5xx status code (see <xref target="http-error-codes"/>) does not create a trigger resource; 
+   the Error.v2 Description in the response body identifies the cause of the rejection. Once a request has been accepted, 
+   failures in the resulting trigger processing are reported only through Error.v2 Descriptions in the trigger resource, 
+   not through HTTP status codes.
+   </t>
+
+   <t>
+   The Error.v2 Description is encoded as a JSON object with the following attributes:
+   </t>
 
    <t><list style="empty" hangIndent="3">
    <t><list style="hanging" hangIndent="3"><t hangText="Name: error">
@@ -2841,6 +2855,13 @@ Otherwise, the dCDN MUST set the trigger state to "active" and start its process
    </list></t>
    </list></t>
 
+   <t>
+   In a cascade of CDNs, a downstream CDN MAY reject a propagated trigger creation request with a 4xx or 5xx status code, 
+   returning an Error.v2 Description in the response body. Because the transit CDN has already accepted the corresponding 
+   request from its own upstream, it cannot relay this rejection as an HTTP status code. Instead, the transit CDN includes
+   the received Error.v2 Description in the "errors" array of its own trigger status resource, reporting it to the upstream CDN 
+   as a processing error of the accepted trigger. 
+   </t>
 
 
           <t>Example of a JSON-serialized Error.v2 Description object reporting a malformed HLS playlist:
@@ -3198,7 +3219,9 @@ Otherwise, the dCDN MUST set the trigger state to "active" and start its process
  
    <t>
    A dCDN supporting the private URL type SHOULD advertise this capability via FCI using <xref target="url-type-capability-object"/>. 
-   If the private URL type is not supported, the dCDN SHOULD reject trigger creation requests using the "eunsupported" error code.
+   If the private URL type is not supported, the dCDN MUST reject the request with a 400 ("Bad Request") HTTP status code. 
+   The response body SHOULD contain an Error.v2 Description with the error code "eunsupported", identifying the unsupported action. 
+   Such a request does not create a trigger resource.
    </t>
    </section>
    </section>
@@ -3288,31 +3311,31 @@ Otherwise, the dCDN MUST set the trigger state to "active" and start its process
   {
     "href": "https://example.com/hls/35cdc008/index.m3u8",
     "type": "hls", 
-    "labels": [ 
-      "type=video", 
-      "protocol=hls"
-    ] 
+    "labels": { 
+      "type": "video", 
+      "protocol" "hls"
+    } 
   }
 
   {
     "href": "https://example.com/dash/35cdc008/main.mpd",
     "type": "dash"
-    "labels": [ 
-      "type=video", 
-      "protocol=mpeg-dash"
-    ] 
+    "labels": { 
+      "type": "video", 
+      "protocol": "mpeg-dash"
+    } 
   }
 
   {
     "href": "https://example.com/img/35cdc008/thumb-l.jpg",
     "size": 102600,
-    "labels": [ "type=thumbnail" ] 
+    "labels": { "type": "thumbnail" } 
   }
 
   {
     "href": "https://example.com/img/35cdc008/thumb-s.jpg",
     "size": 14535,
-    "labels": [ "type=thumbnail" ] 
+    "labels": { "type": "thumbnail" } 
   }
 ]]></sourcecode>
    </t>
@@ -4024,10 +4047,11 @@ Server: example-server/0.1
 
 
    <section anchor="invalidate-with-regex" title="Invalidation with Regex">
-   <t>
-   In the following example, a CI/T "invalidate" trigger uses the Regex property to specify the range of
-   content objects for invalidation, the trigger is rejected by the dCDN due to regex complexity, and
-   an appropriate error is reflected in the response.
+   <t> 
+   In the following example, a CI/T "invalidate" trigger uses the Regex property to specify the range of 
+   content objects for invalidation. The dCDN accepts the trigger creation request. The failure occurs
+   asynchronously during trigger processing, when the dCDN cannot process the regex due to its complexity, 
+   and the resulting error is reflected in the trigger resource.
    </t>
    <t>Please note that some lines in the example are wrapped for clarity.</t>
 
@@ -4214,9 +4238,7 @@ Content-Length: 401
       }
     }
   ],
-  "labels": [
-    "type=video"
-  ]
+  "labels": { "type": "video" }
 }
 
 RESPONSE: 
@@ -4248,9 +4270,7 @@ Server: example-server/0.1
       }
     }
   ],
-  "labels": [
-    "type=video"
-  ]
+  "labels": { "type": "video" }
 }
 ]]></artwork>
    </figure>
@@ -4304,9 +4324,7 @@ Server: example-server/0.1
       }
     }
   ],
-  "labels": [
-    "type=video"
-  ]
+  "labels": { "type": "video" }
 }
 ]]></artwork></figure>
     </section>
@@ -4900,7 +4918,7 @@ Server: example-server/0.1
     "AS64500:0", does not support the first extension in the extensions array. The dCDN "AS64500:0" further
     distributes this trigger to another downstream CDN that is identified as "AS64501:0", which
     does not support the second extension in the extensions array. The error is propagated from
-    "AS64501:0" to "AS64500:0" and the errors.v2 array reflects both errors.
+    "AS64501:0" to "AS64500:0" and the "errors" array reflects both errors.
     </t>
     <figure>
     <artwork><![CDATA[
