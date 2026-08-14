@@ -723,7 +723,7 @@
 
    <t>
    The dCDN MUST validate the trigger resource representation sent by the uCDN. If the representation is malformed or the uCDN 
-   does not have sufficient access rights, the dCDN MUST either respond with an appropriate 4xx HTTP error code.
+   does not have sufficient access rights, the dCDN MUST respond with an appropriate 4xx HTTP error code.
    </t>
 
    <t>
@@ -952,7 +952,7 @@
    The dCDN MUST respond to the trigger deletion request appropriately.
    The dCDN MUST respond with status code 204 ("No Content") without a response body if the trigger has been deleted immediately, 
    202 ("Accepted") if the command has been accepted but the trigger has not yet been deleted, 404 ("Not Found") if the 
-   trigger resource does not exist, or 501 (Not Implemented) if deletion is not supported by the dCDN.
+   trigger resource does not exist, or 501 ("Not Implemented") if deletion is not supported by the dCDN.
    </t>
 
    <t>
@@ -997,8 +997,14 @@
    <t>
    The response body for a rejected request SHOULD contain an Error.v2 Description object identifying the reason for the rejection.
    Providing the full Error.v2 Description allows a transit CDN that receives the rejection when propagating a trigger to relay 
-   the error upstream without loss of information (see <xref target="error-propagation"/>. 
+   the error upstream without loss of information (see <xref target="error-propagation"/>). 
    A rejected request does not create a trigger resource.
+   </t>
+   <t>
+   The response body is sent with the MIME media type "application/cdni" and the payload type
+   "ci-trigger-error.v2" (<xref target="IANA.CDNI.payload.ci-trigger-error.v2"/>).
+   The dCDN SHOULD include the response body irrespective of the "Accept" header field of the
+   rejected request.
    </t>
    <t>
    Once a request has been accepted, processing errors are reported within the trigger as a list of 
@@ -1021,7 +1027,7 @@
    
    <t>
      The temporary unavailability of individual nodes within the dCDN is an
-     internal operational condition. The dCDN SHOULD handle this internally
+     internal operational condition. The dCDN SHOULD handle this internally,
      and such unavailability SHOULD NOT, by itself, affect the reported state of the trigger.
      The dCDN SHOULD ensure that nodes returning to service are brought into
      a state consistent with previously executed trigger operations before
@@ -1108,6 +1114,13 @@
               </tr>
             </tbody>
           </table>
+
+          <t>
+          The 501 status code indicates a lack of support for the operation itself, for example, 
+          deleting or modifying a trigger, or returning an extended representation of a trigger or 
+          trigger collection. A trigger whose type, spec, subject or extension the dCDN does not support is
+          rejected with a 400 status code.
+          </t>
         
         </section>
           <section anchor="error-propagation" title="Error Propagation">
@@ -1119,7 +1132,7 @@
         Triggers sent from uCDN-A to dCDN-B may be redistributed from dCDN-B to dCDN-C, and errors can occur anywhere along the path. 
         It is therefore desirable for uCDN-A, which originated the trigger, to be able to trace an error back to the 
         downstream CDN where it occurred. This document adds a mechanism to convey the PID of the dCDN at which a fault occurred back 
-        to the uCDN, by including that PID in the Error.v2 Description.
+        to the uCDN by including that PID in the Error.v2 Description.
         </t>
         <t>
         Errors arising within a cascaded CDN may be either synchronous request rejections or asynchronous processing failures. 
@@ -1131,8 +1144,8 @@
         Description and report it in its trigger status resource.
         </t>
         <t>
-        Accordingly, when dCDN-B propagates a trigger to dCDN-C, it MUST propagate back the errors associated with that trigger - 
-        whether dCDN-C rejected the propagated request synchronously or reported processing failures asynchronously - by adding the 
+        Accordingly, when dCDN-B propagates a trigger to dCDN-C, it MUST propagate back the errors associated with that trigger,
+        whether dCDN-C rejected the propagated request synchronously or reported processing failures asynchronously, by adding the 
         corresponding Error.v2 Descriptions to the "errors" array in the trigger status resource it returns to uCDN-A. 
         When doing so, dCDN-B MAY include dCDN-C's PID in each propagated Error.v2 Description, indicating the CDN at which the 
         error originated. uCDN-A then receives an "errors" array containing the errors that occurred across all downstream CDNs along 
@@ -1204,8 +1217,8 @@ uCDN-A                         dCDN-B                         dCDN-C
                 </t>
                 <t>
                 dCDN-C authenticates the request and validates the trigger creation request.
-                dCDN-C does not support an element of the request - for example, the trigger definition 
-                contains an "action" type that dCDN-C does not support.
+                dCDN-C does not support an element of the request (for example, the trigger definition 
+                contains an "action" type that dCDN-C does not support).
                 </t>
                 <t>
                 dCDN-C rejects the request with a 4xx HTTP status code (for example, 400 "Bad Request").
@@ -1298,12 +1311,12 @@ uCDN-A                         dCDN-B                         dCDN-C
 
    <t hangText="Name: labels">
    <vspace blankLines="1"/>
-   Description: Array of trigger labels, as described in <xref target="trigger-labels"/>.
+   Description: Trigger labels, as described in <xref target="trigger-labels"/>.
    <vspace blankLines="1"/>
-   Value: A JSON object of trigger labels, where each member represents one label: the member name is the label key 
-   and the member value is the label value, both being JSON strings.
-   The label key and value MUST each be no more than 63 characters in length, MUST begin with a letter or a number,
-   and MAY contain letters, numbers, hyphens, dots, and underscores.
+   Value: A JSON object, whose members are the trigger labels. Each member name is a label key and each member value
+   is the corresponding label value; both are JSON strings.
+   A label key and a label value MUST each be no more than 63 characters in length, 
+   MUST begin with a letter or a number, and MAY contain letters, numbers, hyphens, dots, and underscores.
    <vspace blankLines="1"/>
    Mandatory-to-Specify: No. The default is no labels. 
    </t>
@@ -1511,7 +1524,7 @@ uCDN-A                         dCDN-B                         dCDN-C
    <t>
    A dCDN that receives a trigger creation request containing a trigger specification it does not recognize or support 
    MUST reject the request with a 400 ("Bad Request") HTTP status code.  The response body SHOULD contain an Error.v2 Description 
-   with the error code "espec", including the portion of the trigger specification that caused the rejection. 
+   with the error code "espec", including the portion of the trigger specification that caused the rejection, 
    as defined in <xref target="error-code"/> and a human-readable description identifying the unsupported or unrecognized element. 
    Such a request does not create a trigger resource.
    </t>
@@ -2606,7 +2619,7 @@ Otherwise, the dCDN SHOULD create the trigger in "active" state and begin its pr
 </t>
 
 <t>
-In all of the above cases, the dCDN MUST reject the request by returning a 4xx or 5xx HTTP status code.  The response body 
+In all of the above failure cases, the dCDN MUST reject the request by returning a 4xx or 5xx HTTP status code.  The response body 
 for a rejected request SHOULD contain an Error.v2 Description object identifying the reason for the rejection.
 </t>
 </list>
@@ -2704,7 +2717,7 @@ Otherwise, the dCDN MUST set the trigger state to "active" and start its process
    </section>
    <section title="Trigger Labels" anchor="trigger-labels">
    <t>
-   Trigger labels provide a framework for the uCDN to associate an array of key-value pairs with trigger resources.
+   Trigger labels provide a framework for the uCDN to associate a set of key-value pairs with trigger resources.
    </t>
 
    <t>
@@ -2751,14 +2764,21 @@ Otherwise, the dCDN MUST set the trigger state to "active" and start its process
    <section title="Trigger Errors" anchor="trigger-errors">
    <section title="Error.v2 Description" anchor="error-v2-description">
    <t>
-   Error.v2 Description reports an error associated with a trigger. The same representation is used in two contexts: 
+   An Error.v2 Description reports an error associated with a trigger. The same representation is used in two contexts: 
    within an accepted trigger, to report failures that occur during trigger processing; and within the body of a 4xx 
    or 5xx response, to report the reason a trigger creation request was rejected.
+   </t>
 
+   <t>
    A request rejected with a 4xx or 5xx status code (see <xref target="http-error-codes"/>) does not create a trigger resource; 
    the Error.v2 Description in the response body identifies the cause of the rejection. Once a request has been accepted, 
    failures in the resulting trigger processing are reported only through Error.v2 Descriptions in the trigger resource, 
    not through HTTP status codes.
+   </t>
+   <t>
+   In a 4xx or 5xx response body, the Error.v2 Description is carried as a standalone JSON object
+   with the payload type "ci-trigger-error.v2". Within a trigger resource, it is carried as a member
+   of the "errors" array with the payload type of the enclosing resource.
    </t>
 
    <t>
@@ -2928,10 +2948,10 @@ Otherwise, the dCDN MUST set the trigger state to "active" and start its process
    </section>
 
    <section title="Error Code" anchor="error-code"><t>
-   This type is used by the dCDN to report failures in trigger
-   processing. All Error Codes MUST be registered in the IANA "CDNI CI/T Error Codes" registry (see <xref target="cdni-cit-error-code-registry"/>). Unknown Error Codes
-   MUST be treated as fatal errors, and the request MUST NOT be
-   automatically retried without modification.</t>
+   This type is used by the dCDN to report failures in trigger processing. 
+   All Error Codes MUST be registered in the IANA "CDNI CI/T Error Codes" registry 
+   (see <xref target="cdni-cit-error-code-registry"/>). Unknown Error Codes
+   MUST be treated as fatal errors, and the request MUST NOT be automatically retried without modification.</t>
 
    <t>
    The following Error Codes are defined by this document and MUST be supported by 
@@ -2946,16 +2966,19 @@ Otherwise, the dCDN MUST set the trigger state to "active" and start its process
    <c>econtent</c>
    <c>The dCDN was unable to acquire content (CI/T "preposition" commands only).</c>
    <c>eperm</c>
-   <c>The uCDN does not have permission to create the trigger as requested (e.g., the data is owned by another CDN).</c>
+   <c>The uCDN does not have permission to create the trigger as requested 
+      (e.g., the data is owned by another CDN).
+   </c>
    <c>ereject</c>
-   <c>The dCDN is not willing to process the trigger (for example, a "preposition" request for content at a time when the dCDN would not accept Request Routing requests from the uCDN).</c>
+   <c>The dCDN is not willing to process the trigger (for example, a "preposition" request for content 
+      with a TimePolicy extension time limit, that has expired).
+   </c>
    <c>ecdn</c>
    <c>An internal error in the dCDN or one of its dCDNs.</c>
    <c>ecancelled</c>
    <c>The uCDN cancelled the request.</c>
    <c>eunsupported</c>
-   <c>The trigger resource used an "action type" that is not supported by the dCDN. 
-      No action was taken by the dCDN other than to create a trigger in a "failed" state.</c>
+   <c>The trigger resource used an "action type" that is not supported by the dCDN.</c> 
    <c>espec</c>
    <c>An error occurred while parsing a trigger spec, or that the specific trigger spec is not supported by the CDN.</c>
    <c>esubject</c>
@@ -2963,6 +2986,16 @@ Otherwise, the dCDN MUST set the trigger state to "active" and start its process
    <c>eextension</c>
    <c>An error occurred while parsing or applying a trigger extension, or that the specific extension is not supported by the CDN.</c>
    </texttable>
+
+   <t>
+   A dCDN MUST use these Error Codes only to communicate errors that arise during asynchronous trigger processing after the trigger 
+   has been created, or when a transit CDN receives a synchronous rejection from one or more of its downstream CDNs after it has 
+   already created the trigger resource itself.
+   Any error condition that the dCDN can determine at trigger creation time MUST be communicated then, using a 4xx HTTP status code, 
+   and MUST NOT be deferred to an asynchronous Error Code. Such conditions include, but are not limited to, the dCDN's own lack of 
+   support for a trigger type, spec, subject, or extension, and a lack of permission for the uCDN to create the trigger as requested.
+   </t>
+
    </section>
    </section>
    </section>
@@ -3294,12 +3327,12 @@ Otherwise, the dCDN MUST set the trigger state to "active" and start its process
    
    <t hangText="Name: labels">
    <vspace blankLines="1"/>
-   Description: Array of object labels associated with the object. Each label is encoded as a JSON string in "key=value" form. 
-   The ContentObject semantics are identical to trigger labels.
+   Description: Labels associated with the ContentObject. The semantics are identical to trigger labels.
    <vspace blankLines="1"/>
-   Value: Array of JSON strings.  
-   The label key and value MUST each be no more than 63 characters in length, MUST begin with a letter or a number, 
-   and MAY contain letters, numbers, hyphens, dots, and underscores.
+   Value: A JSON object, whose members are the trigger labels. Each member name is a label key and each member value
+   is the corresponding label value; both are JSON strings.
+   A label key and a label value MUST each be no more than 63 characters in length, 
+   MUST begin with a letter or a number, and MAY contain letters, numbers, hyphens, dots, and underscores.
    <vspace blankLines="1"/>
    Mandatory-to-Specify: No. The default is no labels.
    </t>
@@ -3313,7 +3346,7 @@ Otherwise, the dCDN MUST set the trigger state to "active" and start its process
     "type": "hls", 
     "labels": { 
       "type": "video", 
-      "protocol" "hls"
+      "protocol": "hls"
     } 
   }
 
@@ -4049,7 +4082,7 @@ Server: example-server/0.1
    <section anchor="invalidate-with-regex" title="Invalidation with Regex">
    <t> 
    In the following example, a CI/T "invalidate" trigger uses the Regex property to specify the range of 
-   content objects for invalidation. The dCDN accepts the trigger creation request. The failure occurs
+   content objects for invalidation. The dCDN accepts the trigger creation request. A failure occurs
    asynchronously during trigger processing, when the dCDN cannot process the regex due to its complexity, 
    and the resulting error is reflected in the trigger resource.
    </t>
@@ -4911,25 +4944,33 @@ Server: example-server/0.1
 
 
     </section>
-    <section anchor="trigger-with-extensions" title="Extensions with Error Propagation">
+
+<section anchor="trigger-with-extensions" title="Extensions with Error Propagation">
     <t>
-    In the following example, a CI/T "preposition" command uses two extensions to control the
-    way the trigger is executed. In this example, the receiving dCDN, identified as
-    "AS64500:0", does not support the first extension in the extensions array. The dCDN "AS64500:0" further
-    distributes this trigger to another downstream CDN that is identified as "AS64501:0", which
-    does not support the second extension in the extensions array. The error is propagated from
-    "AS64501:0" to "AS64500:0" and the "errors" array reflects both errors.
+    The following example shows error propagation in a cascade. An upstream CDN, uCDN-A
+    ("AS64496:0"), sends a CI/T "preposition" command that uses two extensions to control the
+    way the trigger is executed. The receiving CDN, tCDN-B ("AS64500:0"), supports both
+    extensions, accepts the request, and creates the trigger resource. tCDN-B then propagates
+    the trigger to its own downstream CDN, dCDN-C ("AS64501:0"), which does not support the
+    "time-policy" extension and rejects the propagated request with a 400 ("Bad Request")
+    status code and an Error.v2 Description in the response body.
+    </t>
+    <t>
+    tCDN-B has already accepted the request from uCDN-A and cannot relay the rejection as an
+    HTTP status code. It sets the state of its own trigger resource to "failed" and records the
+    Error.v2 Description received from dCDN-C in the "errors" array, retaining dCDN-C's CDN PID
+    in the "cdn-id" attribute. uCDN-A retrieves the error when it queries the trigger resource.
     </t>
     <figure>
     <artwork><![CDATA[
-REQUEST:
-  
+(1) uCDN-A creates the trigger in tCDN-B:
+
 POST /cit HTTP/1.1
 User-Agent: example-user-agent/0.1
-Host: dcdn.example
+Host: tcdn.example
 Accept: */*
 Content-Type: application/cdni; ptype=ci-trigger.v2
-Content-Length: 1249
+Content-Length: 950
 
 {
   "action": "preposition",
@@ -4947,132 +4988,13 @@ Content-Length: 1249
     {
       "cit-extension-type": "location-policy",
       "cit-extension-value": {
-        "locations": [
-          {
-            "action": "allow",
-            "footprints": [{
-                "footprint-type": "countrycode",
-                "footprint-value": [ "us" ]
-            }]
-          },
-          {
-            "action": "deny",
-            "footprints": [{
-               "footprint-type": "countrycode",
-               "footprint-value": [ "ca" ]
-            }]
-          }
-        ]
-      },
-      "mandatory-to-enforce": true,
-      "safe-to-redistribute": true
-    },
-    {
-      "cit-extension-type": "time-policy",
-      "cit-extension-value": {
-        "unix-time-window": { 
-          "start": 1730174400, 
-          "end": 1730260800 
-        }   
-      },
-      "mandatory-to-enforce": true,
-      "safe-to-redistribute": true
-    }
-  ],
-  "cdn-path": [ "AS64496:0" ]
-}
-
-RESPONSE:
-
-HTTP/1.1 201 Created
-Date: Sun, 27 Oct 2024 08:48:31 GMT
-Content-Length: 2595
-Content-Type: application/cdni; ptype=ci-trigger.v2
-Location: https://dcdn.example/cit/bcca1cde-ddf0-47db-b859-6a2c043baaa9
-Server: example-server/0.1
-
-{
-  "errors": [
-    {
-      "extensions": [{
-        "cit-extension-type": "location-policy",
-        "cit-extension-value": {
-          "locations": [
-            {
-              "action": "allow",
-              "footprints": [{
-                  "footprint-type": "countrycode",
-                  "footprint-value": [ "us" ]
-                }]
-            },
-            {
-              "action": "deny",
-              "footprints": [{
-                  "footprint-type": "countrycode",
-                  "footprint-value": [ "ca" ]
-                }]
-            }
-          ]
-        },
-        "mandatory-to-enforce": true,
-        "safe-to-redistribute": true
-      }],
-      "description": "unrecognized extension type",
-      "error": "eextension",
-      "cdn": "AS64500:0"
-    },
-    {
-      "extensions": [{
-        "cit-extension-type": "time-policy",
-        "cit-extension-value": {
-          "unix-time-window": {
-            "start": 1730174400, 
-            "end": 1730260800 
-          }
-        },
-        "mandatory-to-enforce": true,
-        "safe-to-redistribute": true
-      }],
-      "description": "unrecognized extension type",
-      "error": "eextension",
-      "cdn": "AS64501:0"
-    }
-  ],
-  "ctime": 1730119691,
-  "etime": 1730119691,
-  "mtime": 1730119691,
-  "state": "failed",
-  "action": "preposition",
-  "specs": [{
-    "trigger-subject": "content",
-    "cit-spec-type": "content-objectlist",
-    "cit-spec-value": {
-      "objects": [{
-        "href": "https://www.example.com/hls/title/index.m3u8",
-        "type": "hls"
-      }]
-    }
-  }],
-  "extensions": [
-    {
-      "cit-extension-type": "location-policy",
-      "cit-extension-value": {
-        "locations": [
-          {
-            "action": "allow",
-            "footprints": [{
-              "footprint-type": "countrycode",
-              "footprint-value": [ "us" ]
-            }]
-          },
-          {
-            "action": "deny",
-            "footprints": [{
-              "footprint-type": "countrycode",
-              "footprint-value": [ "ca" ]
-            }]
-          }
-        ]
+        "locations": [{
+          "action": "allow",
+          "footprints": [{
+            "footprint-type": "countrycode",
+            "footprint-value": [ "us" ]
+          }]
+        }]
       },
       "mandatory-to-enforce": true,
       "safe-to-redistribute": true
@@ -5081,8 +5003,242 @@ Server: example-server/0.1
       "cit-extension-type": "time-policy",
       "cit-extension-value": {
         "unix-time-window": {
-          "start": 1730174400, 
-          "end": 1730260800 
+          "start": 1730174400,
+          "end": 1730260800
+        }
+      },
+      "mandatory-to-enforce": true,
+      "safe-to-redistribute": true
+    }
+  ],
+  "cdn-path": [ "AS64496:0" ]
+}
+
+(2) tCDN-B accepts the request and creates the trigger resource:
+
+HTTP/1.1 201 Created
+Date: Sun, 27 Oct 2024 08:48:31 GMT
+Content-Type: application/cdni; ptype=ci-trigger.v2
+Content-Length: 1041
+Location: https://tcdn.example/cit/bcca1cde-ddf0-47db-b859-6a2c043baaa9
+Server: example-server/0.1
+
+{
+  "ctime": 1730018911,
+  "etime": 1730019031,
+  "mtime": 1730018911,
+  "state": "pending",
+  "action": "preposition",
+  "specs": [{
+    "trigger-subject": "content",
+    "cit-spec-type": "content-objectlist",
+    "cit-spec-value": {
+      "objects": [{
+        "href": "https://www.example.com/hls/title/index.m3u8",
+        "type": "hls"
+      }]
+    }
+  }],
+  "extensions": [
+    {
+      "cit-extension-type": "location-policy",
+      "cit-extension-value": {
+        "locations": [{
+          "action": "allow",
+          "footprints": [{
+            "footprint-type": "countrycode",
+            "footprint-value": [ "us" ]
+          }]
+        }]
+      },
+      "mandatory-to-enforce": true,
+      "safe-to-redistribute": true
+    },
+    {
+      "cit-extension-type": "time-policy",
+      "cit-extension-value": {
+        "unix-time-window": {
+          "start": 1730174400,
+          "end": 1730260800
+        }
+      },
+      "mandatory-to-enforce": true,
+      "safe-to-redistribute": true
+    }
+  ],
+  "cdn-path": [ "AS64496:0" ]
+}
+
+(3) tCDN-B propagates the trigger to dCDN-C, appending its own CDN PID
+    to "cdn-path":
+
+POST /cit HTTP/1.1
+User-Agent: example-user-agent/0.1
+Host: dcdn.example
+Accept: */*
+Content-Type: application/cdni; ptype=ci-trigger.v2
+Content-Length: 963
+
+{
+  "action": "preposition",
+  "specs": [{
+    "trigger-subject": "content",
+    "cit-spec-type": "content-objectlist",
+    "cit-spec-value": {
+      "objects": [{
+        "href": "https://www.example.com/hls/title/index.m3u8",
+        "type": "hls"
+      }]
+    }
+  }],
+  "extensions": [
+    {
+      "cit-extension-type": "location-policy",
+      "cit-extension-value": {
+        "locations": [{
+          "action": "allow",
+          "footprints": [{
+            "footprint-type": "countrycode",
+            "footprint-value": [ "us" ]
+          }]
+        }]
+      },
+      "mandatory-to-enforce": true,
+      "safe-to-redistribute": true
+    },
+    {
+      "cit-extension-type": "time-policy",
+      "cit-extension-value": {
+        "unix-time-window": {
+          "start": 1730174400,
+          "end": 1730260800
+        }
+      },
+      "mandatory-to-enforce": true,
+      "safe-to-redistribute": true
+    }
+  ],
+  "cdn-path": [ "AS64496:0", "AS64500:0" ]
+}
+
+(4) dCDN-C does not support the "time-policy" extension and rejects the
+    request. No trigger resource is created at dCDN-C:
+
+HTTP/1.1 400 Bad Request
+Date: Sun, 27 Oct 2024 08:48:32 GMT
+Content-Type: application/cdni; ptype=ci-trigger-error.v2
+Content-Length: 618
+Server: example-server/0.1
+
+{
+  "error": "eextension",
+  "description": "extension type time-policy is not supported",
+  "specs": [{
+    "trigger-subject": "content",
+    "cit-spec-type": "content-objectlist",
+    "cit-spec-value": {
+      "objects": [{
+        "href": "https://www.example.com/hls/title/index.m3u8",
+        "type": "hls"
+      }]
+    }
+  }],
+  "extensions": [{
+    "cit-extension-type": "time-policy",
+    "cit-extension-value": {
+      "unix-time-window": {
+        "start": 1730174400,
+        "end": 1730260800
+      }
+    },
+    "mandatory-to-enforce": true,
+    "safe-to-redistribute": true
+  }],
+  "cdn-id": "AS64501:0"
+}
+
+(5) uCDN-A queries the trigger resource in tCDN-B:
+
+GET /cit/bcca1cde-ddf0-47db-b859-6a2c043baaa9 HTTP/1.1
+User-Agent: example-user-agent/0.1
+Host: tcdn.example
+Accept: application/cdni; ptype=ci-trigger.v2
+
+(6) tCDN-B reports the rejection from dCDN-C as an Error.v2 Description
+    in its own trigger resource:
+
+HTTP/1.1 200 OK
+Date: Sun, 27 Oct 2024 08:49:05 GMT
+Content-Type: application/cdni; ptype=ci-trigger.v2
+Content-Length: 1832
+Server: example-server/0.1
+
+{
+  "ctime": 1730018911,
+  "etime": 1730019031,
+  "mtime": 1730018912,
+  "state": "failed",
+  "state-reason": "rejected by a downstream CDN",
+  "errors": [
+    {
+      "error": "eextension",
+      "description": "extension type time-policy is not supported",
+      "specs": [{
+        "trigger-subject": "content",
+        "cit-spec-type": "content-objectlist",
+        "cit-spec-value": {
+          "objects": [{
+            "href": "https://www.example.com/hls/title/index.m3u8",
+            "type": "hls"
+          }]
+        }
+      }],
+      "extensions": [{
+        "cit-extension-type": "time-policy",
+        "cit-extension-value": {
+          "unix-time-window": {
+            "start": 1730174400,
+            "end": 1730260800
+          }
+        },
+        "mandatory-to-enforce": true,
+        "safe-to-redistribute": true
+      }],
+      "cdn-id": "AS64501:0"
+    }
+  ],
+  "action": "preposition",
+  "specs": [{
+    "trigger-subject": "content",
+    "cit-spec-type": "content-objectlist",
+    "cit-spec-value": {
+      "objects": [{
+        "href": "https://www.example.com/hls/title/index.m3u8",
+        "type": "hls"
+      }]
+    }
+  }],
+  "extensions": [
+    {
+      "cit-extension-type": "location-policy",
+      "cit-extension-value": {
+        "locations": [{
+          "action": "allow",
+          "footprints": [{
+            "footprint-type": "countrycode",
+            "footprint-value": [ "us" ]
+          }]
+        }]
+      },
+      "mandatory-to-enforce": true,
+      "safe-to-redistribute": true
+    },
+    {
+      "cit-extension-type": "time-policy",
+      "cit-extension-value": {
+        "unix-time-window": {
+          "start": 1730174400,
+          "end": 1730260800
         }
       },
       "mandatory-to-enforce": true,
@@ -5094,6 +5250,7 @@ Server: example-server/0.1
          ]]></artwork>
           </figure>
      </section>
+
 
    </section>
    </section>
@@ -5125,25 +5282,16 @@ Server: example-server/0.1
 
    <texttable style="full"><ttcol align="left"> Payload Type</ttcol>
    <ttcol align="left"> Specification</ttcol>
-   <c>ci-trigger.v2</c>
-   <c>RFCthis</c>
-   <c>ci-trigger-index.v2</c>
-   <c>RFCthis</c>
+   <c>ci-trigger.v2</c><c>RFCthis</c>
+   <c>ci-trigger-index.v2</c><c>RFCthis</c>
+   <c>ci-trigger-collection.v2</c><c>RFCthis</c>
+   <c>ci-trigger-error.v2</c><c>RFCthis</c>
 
-   <c>ci-trigger-collection.v2</c>
-   <c>RFCthis</c>
-
-   <c>FCI.CITScope</c>
-   <c>RFCthis</c>
-
-   <c>FCI.CITContentObjectType</c>
-   <c>RFCthis</c>
-   <c>FCI.CITEndpoint</c>
-   <c>RFCthis</c>
-   <c>FCI.CITExtendedStatus</c>
-   <c>RFCthis</c>
-   <c>FCI.CITUrlType</c>
-   <c>RFCthis</c>
+   <c>FCI.CITScope</c><c>RFCthis</c>
+   <c>FCI.CITContentObjectType</c><c>RFCthis</c>
+   <c>FCI.CITEndpoint</c><c>RFCthis</c>
+   <c>FCI.CITExtendedStatus</c><c>RFCthis</c>
+   <c>FCI.CITUrlType</c><c>RFCthis</c>
 
 
    </texttable>
@@ -5168,6 +5316,12 @@ Server: example-server/0.1
                         (and any associated capability advertisement)</t>
           <t>Interface: CI/T</t>
           <t>Encoding: see <xref target="ci-trigger-collection-resource"/></t>
+        </section>
+        <section anchor="IANA.CDNI.payload.ci-trigger-error.v2" title="CDNI ci-trigger-error.v2 Payload Type">
+          <t>Purpose: The purpose of this payload type is to identify a standalone Error.v2 Description
+                         object returned in the body of a rejected CI/T request</t>
+          <t>Interface: CI/T</t>
+          <t>Encoding: see <xref target="error-v2-description"/></t>
         </section>
 
         <section anchor="IANA-CDNI-payload-types" title="CDNI FCI CI/T Payload Types">
