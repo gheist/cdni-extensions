@@ -389,6 +389,7 @@
    "pending" state  or all triggers labeled "video". The same trigger resource can be present in more than one collection.
    The supported trigger collection representations are listed in 
    <xref target="ci-trigger-collection-resource"/> and include filtering of triggers by state and label.
+   The dCDN selects which filtered collections it publishes, as described in <xref target="ci-trigger-collection-resource"/>.
    Note that additional trigger collection representations can be defined in the future. 
    </t>
    </section>
@@ -870,6 +871,12 @@
    The uCDN MAY fetch the Trigger Collection that contains all of its triggers,  
    or one of the collections that filter triggers based on a parameter such as state or label.
    This makes it possible for the uCDN to poll the status of all trigger resources or selected trigger subsets.
+   </t>
+   <t>
+   The set of filtered trigger collections is chosen by the dCDN, and the uCDN cannot request collections with other filters. 
+   If the uCDN requires a subset of triggers for which the dCDN publishes no matching collection, the uCDN retrieves the narrowest 
+   published collection containing that subset, or the unfiltered collection, and selects the relevant triggers itself using the 
+   "state" and "labels" attributes of each trigger.
    </t>
    </section>
 
@@ -1525,7 +1532,7 @@ uCDN-A                         dCDN-B                         dCDN-C
    A dCDN that receives a trigger creation request containing a trigger specification it does not recognize or support 
    MUST reject the request with a 400 ("Bad Request") HTTP status code.  The response body SHOULD contain an Error.v2 Description 
    with the error code "espec", including the portion of the trigger specification that caused the rejection, 
-   as defined in <xref target="error-code"/> and a human-readable description identifying the unsupported or unrecognized element. 
+   as defined in <xref target="error-code"/>, and a human-readable description identifying the unsupported or unrecognized element. 
    Such a request does not create a trigger resource.
    </t>
 
@@ -2722,7 +2729,7 @@ Otherwise, the dCDN MUST set the trigger state to "active" and start its process
 
    <t>
    The labels may be used to simplify the management of a large number of triggers by grouping related triggers
-   and tracking their status using the trigger collection resource associated with the label value
+   and tracking their status using the trigger collection resource associated with the label value, when published by the dCDN
    (see <xref target="ci-trigger-collection-resource"/> for more details).
    In this case, the label values remain fully opaque to the dCDN and are evaluated for trigger grouping purposes only.
    </t>
@@ -2971,7 +2978,7 @@ Otherwise, the dCDN MUST set the trigger state to "active" and start its process
    </c>
    <c>ereject</c>
    <c>The dCDN is not willing to process the trigger (for example, a "preposition" request for content 
-      with a TimePolicy extension time limit, that has expired).
+      whose TimePolicy extension time limit has expired).
    </c>
    <c>ecdn</c>
    <c>An internal error in the dCDN or one of its dCDNs.</c>
@@ -3018,14 +3025,16 @@ Otherwise, the dCDN MUST set the trigger state to "active" and start its process
    </t>
 
    <t>
-   The dCDN MUST update both the unfiltered trigger collection and the state-based trigger collections when triggers are created,
-   deleted, or their state changes.
+   The dCDN MUST update the unfiltered trigger collection, the state-based trigger collections, and any additional filtered 
+   trigger collections it publishes, when triggers are created or deleted or when their state changes.
    </t>
 
    <t>
-   If triggers include labels, the dCDN MUST create and maintain a trigger collection resource for each label value used in 
-   any trigger resources, and update the trigger index to keep references to label-based trigger collections current.
-   The dCDN SHOULD remove a label-based trigger collection when no triggers remain that use the corresponding label value.
+   The dCDN MAY create additional trigger collection resources with other filters, such as per-label collections or collections 
+   combining state and label criteria. The dCDN is not required to publish a collection for every label or filter combination in use; 
+   the set of filtered collections beyond those required above is chosen by the dCDN. For every filtered collection it publishes, 
+   the dCDN MUST keep the collection contents and its trigger index reference current, and SHOULD remove the collection when no 
+   triggers remain that match its filter.
    </t>
    <t>
    As a top-level resource, the trigger index also includes global dCDN attributes, such as the "staleresourcetime" attribute,
@@ -3046,7 +3055,7 @@ Otherwise, the dCDN MUST set the trigger state to "active" and start its process
    <vspace blankLines="1"/>
    Value: An array of JSON-encoded Trigger Collection View objects, one for each existing trigger collection resource.
    This includes the unfiltered trigger collection, per-state trigger collections (one for each trigger state 
-   as specified in <xref target="trigger-state"/>), and any per-label trigger collections, if they exist.
+   as specified in <xref target="trigger-state"/>), and any additional filtered trigger collections the dCDN publishes.
    <vspace blankLines="1"/>
    Mandatory-to-Specify: Yes.
    </t>
@@ -3089,10 +3098,11 @@ Otherwise, the dCDN MUST set the trigger state to "active" and start its process
    </t>
 
    <t>
-   To allow the uCDN to check the status of multiple triggers in a single request, the dCDN MAY maintain optional 
-   representations of the trigger collection that contain a subset of all triggers, filtered using a parameter. 
-   These filtered collection representations are "optional-to-implement", but if they
-   are implemented, the dCDN MUST include links to them in the trigger collection resource.
+   To allow the uCDN to check the status of multiple triggers in a single request, the dCDN maintains filtered 
+   representations of the trigger collection that contain a subset of all triggers.
+   Per-state trigger collections are mandatory, as specified in Section 4.2. Trigger collections with any other filter 
+   are optional-to-implement. For every filtered collection it implements, the dCDN MUST include a reference to it in 
+   the trigger index resource. 
    </t>
 
    <t>
@@ -3127,27 +3137,16 @@ Otherwise, the dCDN MUST set the trigger state to "active" and start its process
    for details).
    </t>
 
-   <t hangText="Name: filter-type">
+   <t hangText="Name: filter">
    <vspace blankLines="1"/>
-   Description: Indicates the type of filter applied to select the triggers in the collection.  
+   Description: Describes the filter applied to select the triggers in the collection.
    <vspace blankLines="1"/>
-   Value: JSON string containing either "state" or "label".  
+   Value: A Trigger Filter object, as defined in <xref target="trigger-filter"/>.
    <vspace blankLines="1"/>
-   Mandatory-to-Specify: No. The "filter-type" attribute MUST be used only in per-state and per-label trigger collections.  
-   If omitted or empty, the trigger collection MUST include all existing triggers.
+   Mandatory-to-Specify: No. If the "filter" attribute is omitted or is an empty object,
+   the trigger collection MUST include all existing triggers.
    </t>
    
-   <t hangText="Name: filter-value">
-   <vspace blankLines="1"/>
-   Description: Specifies the filter value used to select the triggers in the collection.  
-   <vspace blankLines="1"/>
-   Value: For per-label trigger collections, this attribute MUST contain the corresponding label expressed as a key-value pair (label name and value).
-   For per-state trigger collections, it MUST contain the trigger state shared by all triggers in the collection.  
-   <vspace blankLines="1"/>
-   Mandatory-to-Specify: No. The "filter-value" attribute MUST be used only in per-state and per-label trigger collections.  
-   If omitted or empty, the trigger collection MUST include all existing triggers.
-   </t>
-
    </list></t>
    </list></t>
 
@@ -3157,37 +3156,23 @@ Otherwise, the dCDN MUST set the trigger state to "active" and start its process
       collection resource within the trigger index. It is encoded as a JSON
       object containing the following attributes:
       </t>
-      
       <t>
-      The attributes "filter-type" and "filter-value" together describe the
-      selection criteria used for the referenced trigger collection. If
-      "filter-type" is omitted, the collection represents all triggers.
+      The "filter" attribute describes the selection criteria used for the
+      referenced trigger collection.  If "filter" is omitted, the
+      collection represents all triggers.
       </t>
-      
       <t><list style="empty" hangIndent="3">
       <t><list style="hanging" hangIndent="3">
-      
-      <t hangText="Name: filter-type">
-            <vspace blankLines="1"/>
-            Description: Indicates the type of filter applied to select triggers
-            included in the described trigger collection.
-            <vspace blankLines="1"/>
-            Value: One of "state" or "label".
-            <vspace blankLines="1"/>
-            Mandatory-to-Specify: No. When present, this attribute identifies a
-            per-state or per-label trigger collection.
-      </t>
-      
-      <t hangText="Name: filter-value">
-            <vspace blankLines="1"/>
-            Description: Specifies the value associated with the filter defined by
-            "filter-type".
-            <vspace blankLines="1"/>
-            Value: A JSON string containing the filter value. When "filter-type" is "label", the string contains 
-            the corresponding label value. When "filter-type" is "state", the string contains the trigger state shared
-            by all triggers in the collection.
-            <vspace blankLines="1"/>
-            Mandatory-to-Specify: No. This attribute MUST be present when "filter-type" is specified.
+
+
+      <t hangText="Name: filter">
+      <vspace blankLines="1"/>
+      Description: Describes the filter applied to select the triggers included in the described trigger collection.
+      <vspace blankLines="1"/>
+      Value: A Trigger Filter object, as defined in <xref target="trigger-filter"/>.
+      <vspace blankLines="1"/>
+      Mandatory-to-Specify: No. If the "filter" attribute is omitted or is an empty object,
+      the described trigger collection includes all existing triggers.
       </t>
       
       <t hangText="Name: collection-uri">
@@ -3329,7 +3314,7 @@ Otherwise, the dCDN MUST set the trigger state to "active" and start its process
    <vspace blankLines="1"/>
    Description: Labels associated with the ContentObject. The semantics are identical to trigger labels.
    <vspace blankLines="1"/>
-   Value: A JSON object, whose members are the trigger labels. Each member name is a label key and each member value
+   Value: A JSON object, whose members are the object labels. Each member name is a label key and each member value
    is the corresponding label value; both are JSON strings.
    A label key and a label value MUST each be no more than 63 characters in length, 
    MUST begin with a letter or a number, and MAY contain letters, numbers, hyphens, dots, and underscores.
@@ -3352,7 +3337,7 @@ Otherwise, the dCDN MUST set the trigger state to "active" and start its process
 
   {
     "href": "https://example.com/dash/35cdc008/main.mpd",
-    "type": "dash"
+    "type": "dash",
     "labels": { 
       "type": "video", 
       "protocol": "mpeg-dash"
@@ -3506,8 +3491,53 @@ Otherwise, the dCDN MUST set the trigger state to "active" and start its process
 
 
    </section>
-   </section>
-   </section>
+   <section anchor="trigger-filter" title="Trigger Filter">
+   <t>
+     The Trigger Filter object describes the criteria used to select the
+     triggers in a trigger collection.  It is used by the Trigger Collection
+     resource (<xref target="ci-trigger-collection-resource"/>) and the Trigger
+     Collection View (<xref target="trigger-collection-view"/>).
+   </t>
+   <t>
+     A Trigger Filter is encoded as a JSON object containing the following
+     attributes, each of which is optional:
+   </t>
+   <t>
+     <list style="hanging">
+       <t hangText="Name: state">
+       <vspace blankLines="1"/>
+       Description: The trigger state shared by all triggers in the collection.
+       <vspace blankLines="1"/>
+       Value: Trigger state, as defined in <xref target="trigger-state"/>.
+       <vspace blankLines="1"/>
+       Mandatory-to-Specify: No.
+       </t>
+
+       <t hangText="Name: label">
+       <vspace blankLines="1"/>
+       Description: Labels shared by all triggers in the collection.
+       <vspace blankLines="1"/>
+       Value: A JSON object containing one or more members, each representing a label.  
+       Each member name is a label key and each member value is the corresponding label value; both are JSON strings, 
+       subject to the same syntax constraints as the "labels" trigger attribute (<xref target="ci-trigger-resource"/>).  
+       The "label" attribute, if present, MUST NOT be an empty object.
+       <vspace blankLines="1"/>
+       Mandatory-to-Specify: No.
+       </t>
+    </list>
+  </t>
+
+  <t>
+  A trigger belongs to the collection if and only if it satisfies every
+  attribute of the Trigger Filter object: the trigger's state MUST equal
+  the value of the "state" attribute, if present, and the trigger MUST
+  carry every label listed in the "label" attribute, if present.  Filter
+  criteria are combined as a logical AND; a filter offers no means of
+  expressing alternatives.
+  </t>
+  </section>
+  </section>
+  </section>
 
     <section anchor="footprint-and-capabilities" title="Footprint and Capabilities">
       <t>
@@ -3910,7 +3940,7 @@ User-Agent: example-user-agent/0.1
 Host: dcdn.example
 Accept: */*
 Content-Type: application/cdni; ptype=ci-trigger.v2
-Content-Length: 622
+Content-Length: 614
 
 {
   "action": "preposition",
@@ -3943,7 +3973,7 @@ RESPONSE:
 
 HTTP/1.1 201 Created
 Date: Sun, 27 Oct 2024 08:48:10 GMT
-Content-Length: 710
+Content-Length: 690
 Content-Type: application/cdni; ptype=ci-trigger.v2
 Location: https://dcdn.example/cit/3f2d259d-a980-4742-beeb-9392a58129f5
 Server: example-server/0.1
@@ -4000,7 +4030,7 @@ User-Agent: example-user-agent/0.1
 Host: dcdn.example
 Accept: */*
 Content-Type: application/cdni; ptype=ci-trigger.v2
-Content-Length: 783
+Content-Length: 711
 
 {
   "action": "invalidate",
@@ -4037,7 +4067,7 @@ RESPONSE:
 
 HTTP/1.1 201 Created
 Date: Sun, 27 Oct 2024 08:48:11 GMT
-Content-Length: 807
+Content-Length: 735
 Content-Type: application/cdni; ptype=ci-trigger.v2
 Location: https://dcdn.example/cit/327df5b8-1df8-4cff-92f8-fda27774c171
 Server: example-server/0.1
@@ -4097,7 +4127,7 @@ User-Agent: example-user-agent/0.1
 Host: dcdn.example
 Accept: */*
 Content-Type: application/cdni; ptype=ci-trigger.v2
-Content-Length: 392
+Content-Length: 368
 
 {
   "action": "invalidate",
@@ -4118,7 +4148,7 @@ RESPONSE:
 
 HTTP/1.1 201 Created
 Date: Sun, 27 Oct 2024 08:48:12 GMT
-Content-Length: 960
+Content-Length: 916
 Content-Type: application/cdni; ptype=ci-trigger.v2
 Location: https://dcdn.example/cit/991b9fb9-d0be-4d05-be06-64c0e5c5a5f9
 Server: example-server/0.1
@@ -4175,7 +4205,7 @@ User-Agent: example-user-agent/0.1
 Host: dcdn.example
 Accept: */*
 Content-Type: application/cdni; ptype=ci-trigger.v2
-Content-Length: 328
+Content-Length: 305
 
 {
   "action": "preposition",
@@ -4196,7 +4226,7 @@ RESPONSE:
 
 HTTP/1.1 201 Created
 Date: Sun, 27 Oct 2024 08:48:13 GMT
-Content-Length: 793
+Content-Length: 798
 Content-Type: application/cdni; ptype=ci-trigger.v2
 Location: https://dcdn.example/cit/86633e6e-d2da-4185-a285-b3d087a5d711
 Server: example-server/0.1
@@ -4254,7 +4284,7 @@ User-Agent: example-user-agent/0.1
 Host: dcdn.example
 Accept: */*
 Content-Type: application/cdni; ptype=ci-trigger.v2
-Content-Length: 401
+Content-Length: 374
 
 {
   "specs": [
@@ -4278,7 +4308,7 @@ RESPONSE:
 
 HTTP/1.1 200 OK
 Date: Sun, 27 Oct 2024 08:48:14 GMT
-Content-Length: 520
+Content-Length: 493
 Content-Type: application/cdni; ptype=ci-trigger.v2
 Server: example-server/0.1
 
@@ -4332,7 +4362,7 @@ RESPONSE:
 
 HTTP/1.1 200 OK
 Date: Sun, 27 Oct 2024 08:48:15 GMT
-Content-Length: 523
+Content-Length: 496
 Content-Type: application/cdni; ptype=ci-trigger.v2
 Server: example-server/0.1
 
@@ -4423,47 +4453,39 @@ Content-Type: application/cdni; ptype=ci-trigger-index.v2
   "staleresourcetime": 86400,
   "collections": [
     {
-      "uri": "/cit/all"
+      "collection-uri": "/cit/all"
     },
     {
-      "filter-type": "state",
-      "filter-value": "pending",
-      "uri": "/cit/state/pending"
+      "filter": { "state": "pending" },
+      "collection-uri": "/cit/state/pending"
     },
     {
-      "filter-type": "state",
-      "filter-value": "active",
-      "uri": "/cit/state/active"
+      "filter": { "state": "active" },
+      "collection-uri": "/cit/state/active"
     },
     {
-      "filter-type": "state",
-      "filter-value": "complete",
-      "uri": "/cit/state/complete"
+      "filter": { "state": "complete" },
+      "collection-uri": "/cit/state/complete"
     },
     {
-      "filter-type": "state",
-      "filter-value": "processed",
-      "uri": "/cit/state/processed"
+      "filter": { "state": "processed" },
+      "collection-uri": "/cit/state/processed"
     },
     {
-      "filter-type": "state",
-      "filter-value": "failed",
-      "uri": "/cit/state/failed"
+      "filter": { "state": "failed" },
+      "collection-uri": "/cit/state/failed"
     },
     {
-      "filter-type": "state",
-      "filter-value": "cancelling",
-      "uri": "/cit/state/cancelling"
+      "filter": { "state": "cancelling" },
+      "collection-uri": "/cit/state/cancelling"
     },
     {
-      "filter-type": "state",
-      "filter-value": "cancelled",
-      "uri": "/cit/state/cancelled"
+      "filter": { "state": "cancelled" },
+      "collection-uri": "/cit/state/cancelled"
     },
     {
-      "filter-type": "label",
-      "filter-value": "type=video", 
-      "uri": "/cit/labels/type=video"
+      "filter": { "label": { "type": "video" } },
+      "collection-uri": "/cit/labels/type=video"
     }
   ]
 }
@@ -4488,7 +4510,7 @@ Accept: */*
 RESPONSE:
 
 HTTP/1.1 200 OK
-Content-Length: 123
+Content-Length: 96
 Expires: Sun, 27 Oct 2024 08:49:19 GMT
 Server: example-server/0.1
 ETag: "4331492443626270781"
@@ -4496,7 +4518,7 @@ Last-Modified: Sun, 27 Oct 2024 08:40:17 GMT
 Cache-Control: max-age=60
 Date: Sun, 27 Oct 2024 08:48:19 GMT
 Content-Type: application/cdni; ptype=ci-trigger-collection.v2
-327df5b8-1df8-4cff-92f8-fda27774c171
+
 {
   "trigger-urls": [
     "https://dcdn.example/cit/327df5b8-1df8-4cff-92f8-fda27774c171"
@@ -4506,7 +4528,7 @@ Content-Type: application/cdni; ptype=ci-trigger-collection.v2
    </figure>
    <t>
    At this point, if no other triggers had been created, the trigger collection for failed triggers 
-   would hold the two failed triggers shown above while other trigger collecions would be empty. 
+   would hold the two failed triggers shown above while other trigger collections would be empty.
    For example:</t>
 
    <figure><artwork><![CDATA[
@@ -4520,7 +4542,7 @@ Accept: */*
 RESPONSE:
 
 HTTP/1.1 200 OK
-Content-Length: 51
+Content-Length: 25
 Expires: Sun, 27 Oct 2024 08:49:20 GMT
 Server: example-server/0.1
 ETag: "7958041393922269003"
@@ -4546,7 +4568,7 @@ Accept: */*
 RESPONSE:
 
 HTTP/1.1 200 OK
-Content-Length: 191
+Content-Length: 164
 Expires: Sun, 27 Oct 2024 08:49:21 GMT
 Server: example-server/0.1
 ETag: "4331492443626270781"
@@ -4583,7 +4605,7 @@ Accept: */*
 RESPONSE:
 
 HTTP/1.1 200 OK
-Content-Length: 545
+Content-Length: 705
 Expires: Sun, 27 Oct 2024 08:49:22 GMT
 Server: example-server/0.1
 ETag: "554385204989405469"
@@ -4722,7 +4744,7 @@ Accept: */*
 RESPONSE:
 
 HTTP/1.1 200 OK
-Content-Length: 193
+Content-Length: 122
 Expires: Sun, 27 Oct 2024 08:49:26 GMT
 Server: example-server/0.1
 ETag: "4481489539378529796"
@@ -4760,7 +4782,7 @@ User-Agent: example-user-agent/0.1
 Host: dcdn.example
 Accept: */*
 Content-Type: application/cdni; ptype=ci-trigger.v2
-Content-Length: 294
+Content-Length: 270
 
 {
   "action": "purge",
@@ -4780,7 +4802,7 @@ RESPONSE:
 
 HTTP/1.1 201 Created
 Date: Sun, 27 Oct 2024 08:48:27 GMT
-Content-Length: 385
+Content-Length: 361
 Content-Type: application/cdni; ptype=ci-trigger.v2
 Location: https://dcdn.example/cit/564cc45e-9099-4a37-b95e-60342f2647ba
 Server: example-server/0.1
@@ -4811,7 +4833,7 @@ User-Agent: example-user-agent/0.1
 Host: dcdn.example
 Accept: */*
 Content-Type: application/cdni; ptype=ci-trigger.v2
-Content-Length: 527
+Content-Length: 487
 
 {
   "action": "preposition",
@@ -4840,7 +4862,7 @@ RESPONSE:
 
 HTTP/1.1 201 Created
 Date: Sun, 27 Oct 2024 08:48:28 GMT
-Content-Length: 467
+Content-Length: 578
 Content-Type: application/cdni; ptype=ci-trigger.v2
 Location: https://dcdn.example/cit/f6dde35f-703f-49e9-bb80-4964dff3bca5
 Server: example-server/0.1
@@ -4913,7 +4935,7 @@ RESPONSE:
 
 HTTP/1.1 201 Created
 Date: Sun, 27 Oct 2024 08:48:30 GMT
-Content-Length: 526
+Content-Length: 488
 Content-Type: application/cdni; ptype=ci-trigger.v2
 Location: https://dcdn.example/cit/e5483c4a-7c8e-4820-91c8-3c0a9f2edba8
 Server: example-server/0.1
