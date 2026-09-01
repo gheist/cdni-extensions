@@ -3514,14 +3514,14 @@ Otherwise, the dCDN MUST set the trigger state to "active" and start its process
        Mandatory-to-Specify: No.
        </t>
 
-       <t hangText="Name: label">
+       <t hangText="Name: labels">
        <vspace blankLines="1"/>
        Description: Labels shared by all triggers in the collection.
        <vspace blankLines="1"/>
        Value: A JSON object containing one or more members, each representing a label.  
        Each member name is a label key and each member value is the corresponding label value; both are JSON strings, 
        subject to the same syntax constraints as the "labels" trigger attribute (<xref target="ci-trigger-resource"/>).  
-       The "label" attribute, if present, MUST NOT be an empty object.
+       The "labels" attribute, if present, MUST NOT be an empty object.
        <vspace blankLines="1"/>
        Mandatory-to-Specify: No.
        </t>
@@ -3532,7 +3532,7 @@ Otherwise, the dCDN MUST set the trigger state to "active" and start its process
   A trigger belongs to the collection if and only if it satisfies every
   attribute of the Trigger Filter object: the trigger's state MUST equal
   the value of the "state" attribute, if present, and the trigger MUST
-  carry every label listed in the "label" attribute, if present.  Filter
+  carry every label listed in the "labels" attribute, if present.  Filter
   criteria are combined as a logical AND; a filter offers no means of
   expressing alternatives.
   </t>
@@ -4485,7 +4485,7 @@ Content-Type: application/cdni; ptype=ci-trigger-index.v2
       "collection-uri": "/cit/state/cancelled"
     },
     {
-      "filter": { "label": { "type": "video" } },
+      "filter": { "labels": { "type": "video" } },
       "collection-uri": "/cit/labels/type=video"
     }
   ]
