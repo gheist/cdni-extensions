@@ -2955,7 +2955,8 @@ Otherwise, the dCDN MUST set the trigger state to "active" and start its process
    </section>
 
    <section title="Error Code" anchor="error-code"><t>
-   This type is used by the dCDN to report failures in trigger processing. 
+   This type is used by the dCDN to report an error associated with a trigger (see <xref target="error-v2-description"/>), 
+   whether it arises during asynchronous processing or is reported in a synchronous 4xx or 5xx response to a rejected request.
    All Error Codes MUST be registered in the IANA "CDNI CI/T Error Codes" registry 
    (see <xref target="cdni-cit-error-code-registry"/>). Unknown Error Codes
    MUST be treated as fatal errors, and the request MUST NOT be automatically retried without modification.</t>
