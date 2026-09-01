@@ -4580,7 +4580,7 @@ Content-Type: application/cdni; ptype=ci-trigger-collection.v2
 
 {
   "trigger-urls": [
-    "https://dcdn.example/cit/991b9fb9-d0be-4d05-be06-64c0e5c5a5f9"
+    "https://dcdn.example/cit/991b9fb9-d0be-4d05-be06-64c0e5c5a5f9",
     "https://dcdn.example/cit/86633e6e-d2da-4185-a285-b3d087a5d711"
   ]
 }
