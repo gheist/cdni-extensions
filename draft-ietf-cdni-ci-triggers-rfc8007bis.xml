@@ -3941,7 +3941,7 @@ User-Agent: example-user-agent/0.1
 Host: dcdn.example
 Accept: */*
 Content-Type: application/cdni; ptype=ci-trigger.v2
-Content-Length: 614
+Content-Length: 574
 
 {
   "action": "preposition",
@@ -3973,8 +3973,8 @@ Content-Length: 614
 RESPONSE:
 
 HTTP/1.1 201 Created
-Date: Sun, 27 Oct 2024 08:48:10 GMT
-Content-Length: 690
+Date: Tue, 1 Sep 2026 08:48:10 GMT
+Content-Length: 662
 Content-Type: application/cdni; ptype=ci-trigger.v2
 Location: https://dcdn.example/cit/3f2d259d-a980-4742-beeb-9392a58129f5
 Server: example-server/0.1
@@ -4067,7 +4067,7 @@ Content-Length: 711
 RESPONSE:
 
 HTTP/1.1 201 Created
-Date: Sun, 27 Oct 2024 08:48:11 GMT
+Date: Tue, 1 Sep 2026 08:48:11 GMT
 Content-Length: 735
 Content-Type: application/cdni; ptype=ci-trigger.v2
 Location: https://dcdn.example/cit/327df5b8-1df8-4cff-92f8-fda27774c171
@@ -4148,7 +4148,7 @@ Content-Length: 368
 RESPONSE:
 
 HTTP/1.1 201 Created
-Date: Sun, 27 Oct 2024 08:48:12 GMT
+Date: Tue, 1 Sep 2026 08:48:12 GMT
 Content-Length: 916
 Content-Type: application/cdni; ptype=ci-trigger.v2
 Location: https://dcdn.example/cit/991b9fb9-d0be-4d05-be06-64c0e5c5a5f9
@@ -4206,7 +4206,7 @@ User-Agent: example-user-agent/0.1
 Host: dcdn.example
 Accept: */*
 Content-Type: application/cdni; ptype=ci-trigger.v2
-Content-Length: 305
+Content-Length: 304
 
 {
   "action": "preposition",
@@ -4226,8 +4226,8 @@ Content-Length: 305
 RESPONSE:
 
 HTTP/1.1 201 Created
-Date: Sun, 27 Oct 2024 08:48:13 GMT
-Content-Length: 798
+Date: Tue, 1 Sep 2026 08:48:13 GMT
+Content-Length: 793
 Content-Type: application/cdni; ptype=ci-trigger.v2
 Location: https://dcdn.example/cit/86633e6e-d2da-4185-a285-b3d087a5d711
 Server: example-server/0.1
@@ -4308,7 +4308,7 @@ Content-Length: 374
 RESPONSE: 
 
 HTTP/1.1 200 OK
-Date: Sun, 27 Oct 2024 08:48:14 GMT
+Date: Tue, 1 Sep 2026 08:48:14 GMT
 Content-Length: 493
 Content-Type: application/cdni; ptype=ci-trigger.v2
 Server: example-server/0.1
@@ -4362,7 +4362,7 @@ Content-Length: 27
 RESPONSE: 
 
 HTTP/1.1 200 OK
-Date: Sun, 27 Oct 2024 08:48:15 GMT
+Date: Tue, 1 Sep 2026 08:48:15 GMT
 Content-Length: 496
 Content-Type: application/cdni; ptype=ci-trigger.v2
 Server: example-server/0.1
@@ -4410,7 +4410,7 @@ Accept: */*
 RESPONSE:
 
 HTTP/1.1 204 No Content
-Date: Sun, 27 Oct 2024 08:48:16 GMT
+Date: Tue, 1 Sep 2026 08:48:16 GMT
 Content-Length: 0
 Content-Type: text/html; charset=UTF-8
 Server: example-server/0.1
@@ -4440,13 +4440,13 @@ Accept: */*
 RESPONSE:
 
 HTTP/1.1 200 OK
-Content-Length: 341
-Expires: Sun, 27 Oct 2024 08:49:18 GMT
+Content-Length: 940
+Expires: Tue, 1 Sep 2026 08:49:18 GMT
 Server: example-server/0.1
 ETag: "936094426920308378"
-Last-Modified: Sun, 27 Oct 2024 08:40:17 GMT
+Last-Modified: Tue, 1 Sep 2026 08:40:17 GMT
 Cache-Control: max-age=60
-Date: Sun, 27 Oct 2024 08:48:18 GMT
+Date: Tue, 1 Sep 2026 08:48:18 GMT
 Content-Type: application/cdni; ptype=ci-trigger-index.v2
 
 {
@@ -4512,12 +4512,12 @@ RESPONSE:
 
 HTTP/1.1 200 OK
 Content-Length: 96
-Expires: Sun, 27 Oct 2024 08:49:19 GMT
+Expires: Tue, 1 Sep 2026 08:49:19 GMT
 Server: example-server/0.1
 ETag: "4331492443626270781"
-Last-Modified: Sun, 27 Oct 2024 08:40:17 GMT
+Last-Modified: Tue, 1 Sep 2026 08:40:17 GMT
 Cache-Control: max-age=60
-Date: Sun, 27 Oct 2024 08:48:19 GMT
+Date: Tue, 1 Sep 2026 08:48:19 GMT
 Content-Type: application/cdni; ptype=ci-trigger-collection.v2
 
 {
@@ -4544,12 +4544,12 @@ RESPONSE:
 
 HTTP/1.1 200 OK
 Content-Length: 25
-Expires: Sun, 27 Oct 2024 08:49:20 GMT
+Expires: Tue, 1 Sep 2026 08:49:20 GMT
 Server: example-server/0.1
 ETag: "7958041393922269003"
-Last-Modified: Sun, 27 Oct 2024 08:48:17 GMT
+Last-Modified: Tue, 1 Sep 2026 08:48:17 GMT
 Cache-Control: max-age=60
-Date: Sun, 27 Oct 2024 08:48:20 GMT
+Date: Tue, 1 Sep 2026 08:48:20 GMT
 Content-Type: application/cdni; ptype=ci-trigger-collection.v2
 
 {
@@ -4569,13 +4569,13 @@ Accept: */*
 RESPONSE:
 
 HTTP/1.1 200 OK
-Content-Length: 164
-Expires: Sun, 27 Oct 2024 08:49:21 GMT
+Content-Length: 165
+Expires: Tue, 1 Sep 2026 08:49:21 GMT
 Server: example-server/0.1
 ETag: "4331492443626270781"
-Last-Modified: Sun, 27 Oct 2024 08:48:13 GMT
+Last-Modified: Tue, 1 Sep 2026 08:48:13 GMT
 Cache-Control: max-age=60
-Date: Sun, 27 Oct 2024 08:48:19 GMT
+Date: Tue, 1 Sep 2026 08:48:19 GMT
 Content-Type: application/cdni; ptype=ci-trigger-collection.v2
 
 {
@@ -4606,13 +4606,13 @@ Accept: */*
 RESPONSE:
 
 HTTP/1.1 200 OK
-Content-Length: 705
-Expires: Sun, 27 Oct 2024 08:49:22 GMT
+Content-Length: 704
+Expires: Tue, 1 Sep 2026 08:49:22 GMT
 Server: example-server/0.1
 ETag: "554385204989405469"
-Last-Modified: Sun, 27 Oct 2024 08:48:17 GMT
+Last-Modified: Tue, 1 Sep 2026 08:48:17 GMT
 Cache-Control: max-age=60
-Date: Sun, 27 Oct 2024 08:48:22 GMT
+Date: Tue, 1 Sep 2026 08:48:22 GMT
 Content-Type: application/cdni; ptype=ci-trigger.v2
 
 {  
@@ -4664,17 +4664,17 @@ User-Agent: example-user-agent/0.1
 Host: dcdn.example
 Accept: */*
 If-None-Match: "4331492443626270781"
-If-Modified-Since: Sun, 27 Oct 2024 08:40:23 GMT
+If-Modified-Since: Tue, 1 Sep 2026 08:40:23 GMT
 
 RESPONSE:
 HTTP/1.1 304 Not Modified
 Content-Length: 0
-Expires: Sun, 27 Oct 2024 08:49:21 GMT
+Expires: Tue, 1 Sep 2026 08:49:21 GMT
 Server: example-server/0.1
 ETag: "4331492443626270781"
-Last-Modified: Sun, 27 Oct 2024 08:48:17 GMT
+Last-Modified: Tue, 1 Sep 2026 08:48:17 GMT
 Cache-Control: max-age=60
-Date: Sun, 27 Oct 2024 08:48:23 GMT
+Date: Tue, 1 Sep 2026 08:48:23 GMT
 Content-Type: application/cdni; ptype=ci-trigger-collection.v2
 
 REQUEST:
@@ -4684,18 +4684,18 @@ User-Agent: example-user-agent/0.1
 Host: dcdn.example
 Accept: */*
 If-None-Match: "6990548174277557683"
-If-Modified-Since: Sun, 27 Oct 2024 08:49:10 GMT
+If-Modified-Since: Tue, 1 Sep 2026 08:49:10 GMT
 
 RESPONSE:
 
 HTTP/1.1 304 Not Modified
 Content-Length: 0
-Expires: Sun, 27 Oct 2024 08:49:24 GMT
+Expires: Tue, 1 Sep 2026 08:49:24 GMT
 Server: example-server/0.1
 ETag: "554385204989405469"
-Last-Modified: Sun, 27 Oct 2024 08:48:17 GMT
+Last-Modified: Tue, 1 Sep 2026 08:48:17 GMT
 Cache-Control: max-age=60
-Date: Sun, 27 Oct 2024 08:48:24 GMT
+Date: Tue, 1 Sep 2026 08:48:24 GMT
 Content-Type: application/cdni; ptype=ci-trigger.v2
 
 ]]></artwork>
@@ -4722,12 +4722,12 @@ RESPONSE:
 
 HTTP/1.1 200 OK
 Content-Length: 51
-Expires: Sun, 27 Oct 2024 08:49:25 GMT
+Expires: Tue, 1 Sep 2026 08:49:25 GMT
 Server: example-server/0.1
 ETag: "1337503181677633762"
-Last-Modified: Sun, 27 Oct 2024 08:48:17 GMT
+Last-Modified: Tue, 1 Sep 2026 08:48:17 GMT
 Cache-Control: max-age=60
-Date: Sun, 27 Oct 2024 08:48:25 GMT
+Date: Tue, 1 Sep 2026 08:48:25 GMT
 Content-Type: application/cdni; ptype=ci-trigger-collection.v2
 
 {
@@ -4746,12 +4746,12 @@ RESPONSE:
 
 HTTP/1.1 200 OK
 Content-Length: 122
-Expires: Sun, 27 Oct 2024 08:49:26 GMT
+Expires: Tue, 1 Sep 2026 08:49:26 GMT
 Server: example-server/0.1
 ETag: "4481489539378529796"
-Last-Modified: Sun, 27 Oct 2024 08:48:17 GMT
+Last-Modified: Tue, 1 Sep 2026 08:48:17 GMT
 Cache-Control: max-age=60
-Date: Sun, 27 Oct 2024 08:48:26 GMT
+Date: Tue, 1 Sep 2026 08:48:26 GMT
 Content-Type: application/cdni; ptype=ci-trigger-collection.v2
 
 {
@@ -4802,7 +4802,7 @@ Content-Length: 270
 RESPONSE:
 
 HTTP/1.1 201 Created
-Date: Sun, 27 Oct 2024 08:48:27 GMT
+Date: Tue, 1 Sep 2026 08:48:27 GMT
 Content-Length: 361
 Content-Type: application/cdni; ptype=ci-trigger.v2
 Location: https://dcdn.example/cit/564cc45e-9099-4a37-b95e-60342f2647ba
@@ -4862,7 +4862,7 @@ Content-Length: 487
 RESPONSE:
 
 HTTP/1.1 201 Created
-Date: Sun, 27 Oct 2024 08:48:28 GMT
+Date: Tue, 1 Sep 2026 08:48:28 GMT
 Content-Length: 578
 Content-Type: application/cdni; ptype=ci-trigger.v2
 Location: https://dcdn.example/cit/f6dde35f-703f-49e9-bb80-4964dff3bca5
@@ -4913,6 +4913,7 @@ User-Agent: example-user-agent/0.1
 Host: dcdn.example
 Accept: */*
 Content-Type: application/cdni; ptype=ci-trigger.v2
+Content-Length: 395
 
 {
   "action": "preposition",
@@ -4935,8 +4936,8 @@ Content-Type: application/cdni; ptype=ci-trigger.v2
 RESPONSE:
 
 HTTP/1.1 201 Created
-Date: Sun, 27 Oct 2024 08:48:30 GMT
-Content-Length: 488
+Date: Tue, 1 Sep 2026 08:48:30 GMT
+Content-Length: 486
 Content-Type: application/cdni; ptype=ci-trigger.v2
 Location: https://dcdn.example/cit/e5483c4a-7c8e-4820-91c8-3c0a9f2edba8
 Server: example-server/0.1
@@ -4993,7 +4994,7 @@ User-Agent: example-user-agent/0.1
 Host: tcdn.example
 Accept: */*
 Content-Type: application/cdni; ptype=ci-trigger.v2
-Content-Length: 950
+Content-Length: 951
 
 {
   "action": "preposition",
@@ -5040,9 +5041,9 @@ Content-Length: 950
 (2) tCDN-B accepts the request and creates the trigger resource:
 
 HTTP/1.1 201 Created
-Date: Sun, 27 Oct 2024 08:48:31 GMT
+Date: Tue, 1 Sep 2026 08:48:31 GMT
 Content-Type: application/cdni; ptype=ci-trigger.v2
-Content-Length: 1041
+Content-Length: 1042
 Location: https://tcdn.example/cit/bcca1cde-ddf0-47db-b859-6a2c043baaa9
 Server: example-server/0.1
 
@@ -5100,7 +5101,7 @@ User-Agent: example-user-agent/0.1
 Host: dcdn.example
 Accept: */*
 Content-Type: application/cdni; ptype=ci-trigger.v2
-Content-Length: 963
+Content-Length: 964
 
 {
   "action": "preposition",
@@ -5148,9 +5149,9 @@ Content-Length: 963
     request. No trigger resource is created at dCDN-C:
 
 HTTP/1.1 400 Bad Request
-Date: Sun, 27 Oct 2024 08:48:32 GMT
+Date: Tue, 1 Sep 2026 08:48:32 GMT
 Content-Type: application/cdni; ptype=ci-trigger-error.v2
-Content-Length: 618
+Content-Length: 619
 Server: example-server/0.1
 
 {
@@ -5191,9 +5192,9 @@ Accept: application/cdni; ptype=ci-trigger.v2
     in its own trigger resource:
 
 HTTP/1.1 200 OK
-Date: Sun, 27 Oct 2024 08:49:05 GMT
+Date: Tue, 1 Sep 2026 08:49:05 GMT
 Content-Type: application/cdni; ptype=ci-trigger.v2
-Content-Length: 1832
+Content-Length: 1833
 Server: example-server/0.1
 
 {
